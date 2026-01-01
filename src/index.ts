@@ -102,7 +102,9 @@ async function show() {
         H("a",
           {
             title: `@${o.rootAcct} on ${o.instance}`,
-            href: `tree.html#${o.key}`,
+            href: `tree.html?${
+              new URLSearchParams({instance: o.instance, id: o.id})
+            }`,
           },
           o.rootAuthor ? emojify(o.rootAuthor, o.rootAccountEmojis) : o.key,
         ),

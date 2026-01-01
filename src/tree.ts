@@ -12,23 +12,23 @@ import emojify from './emojify';
 import A_blank from './A_blank';
 
 {
-  const {hash} = location;
-  try {
-    // The hash should have the standard form 'host/id', but we also accept
-    // URLs from various mastodon frontends, prefixed with "url:".
-    // In the latter case we transform it to standard form.
-    if (hash.startsWith("#url:")) {
-      const subUrl = hash.substring(5);
+  // The search query should provide instance and toot id, but we also accept
+  // URLs from various mastodon frontends, given as query parameter "url".
+  // In the latter case we transform it to standard form.
+  const subUrl = new URLSearchParams(location.search).get("url");
+  if (subUrl) {
+    try {
       const [instance, id] = url2key(subUrl) ?? closeWindow();
-      const key = `${instance}/${id}`;
-      location.hash = key;
-      if (!await (await database).get("treeOverview", key)) {
-        // no "await"; load tree in background:
+      const newURL = new URL(location.href);
+      newURL.search = new URLSearchParams({instance, id}).toString();
+      window.history.replaceState({}, '', newURL);
+      if (!await (await database).get("treeOverview", `${instance}/${id}`)) {
+        // no "await" => load tree in background:
         fetchTree(instance, id);
       }
+    } catch (e) {
+      alert(`something went wrong when analyzing the url "${subUrl}": ${e}`);
     }
-  } catch (e) {
-    alert(`something went wrong when analyzing the hash "${hash}": ${e}`);
   }
 }
 
@@ -38,7 +38,9 @@ function closeWindow(): never {
   throw "Window was closed neither automatically nor manually."
 }
 
-const key = location.hash.substring(1);
+const params = new URLSearchParams(location.search);
+// TODO report problem if instance or value are missing or look strange
+const key = `${params.get("instance")}/${params.get("id")}`;
 
 setupNotifications<Notifications>("followToots", {
   async updatedTreeOverview(updKey) {

@@ -33,9 +33,11 @@
     <code id="bookmarklet"></code>
     <script>
       document.querySelector("#bookmarklet").textContent =
-        `javascript:window.open("${
-          new URL("tree.html", location.href)
-        }#url:"+document.location)`;
+`javascript:window.open(
+  "${new URL("tree.html", location.href)}?"
+  +
+  new URLSearchParams({url: document.location})
+)`;
     </script>
     <button onclick="
       navigator.clipboard.writeText(
