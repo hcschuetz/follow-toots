@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Follow Toots - Overview</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <nav>
+    <a href=".">Overview</a>
+    <a href="about.html">About</a>
+    <a href="config.html">Configuration</a>
+    <!-- TODO add href -->
+    <a>Source</a>
+  </nav>
+
+  <h1>Follow Toots - Overview</h1>
+
+  <div id="overview"></div>
+
+  <div id="url-input">
+    <p id="new-entry">
+      <span>URL of a toot to follow:</span>
+    </p>
+    <p>
+      The URL should reference a toot (not a profile, feed, ...) in
+      a plain mastodon client, in phanpy.social or in elk.zone.
+    </p>
+    <p>
+      See the <a href="config.html">Configuration</a> page for a more convenient
+      way of adding toots.
+    </p>
+  </div>
+  <script type="module">
+    import database from "./src/database";
+    const db = await database;
+    const channel = new BroadcastChannel("hideUrlInput");
+    const urlInputEl = document.querySelector("#url-input");
+    async function showOrHideUrlInput() {
+      urlInputEl.hidden =
+        (await db.get("config", "hide-url-input"))?.value ?? false;
+    }
+    channel.onmessage = showOrHideUrlInput;
+    showOrHideUrlInput();
+  </script>
+
+  <script type="module" src="src/index.ts"></script>
+</body>
+</html>
