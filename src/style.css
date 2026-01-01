@@ -336,12 +336,16 @@ pre {
 .bookmarklet-container {
   margin-block: 1.5em;
   display: flex;
+  flex-direction: column;
   gap: 0.5em;
 
   #bookmarklet {
-    flex-grow: 1;
+    padding: 0.5rem;
     white-space: pre;
     overflow-x: auto;
+  }
+  button {
+    align-self: start;
   }
 }
 
