@@ -61,7 +61,7 @@ export default (urlString: string): [string, string] | undefined => {
 const userRegExp = /^@[-_a-z0-9]+(@[-_a-z0-9\.]+)?$/i;
 const localUserRegExp = /^[-_a-z0-9]+$/i;
 
-// In theory, a mastodon status id can be anything and should not be
+// In theory, a mastodon status id can be any string and should not be
 // introspected.  But in practice it consists of digits, which we can use for
 // a plausibility check.
 const idRegExp = /^\d+$/;
