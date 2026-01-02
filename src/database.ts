@@ -1,6 +1,5 @@
 import { openDB, type DBSchema } from 'idb';
 
-import asgn from "./asgn";
 import type { CustomEmoji, Status } from './mastodon-entities';
 
 export
