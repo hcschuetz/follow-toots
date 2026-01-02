@@ -22,16 +22,27 @@ body:not(.tree) {
 }
 
 body.tree {
-  margin: 0;
+  margin: 1em 0 0 0;
   padding: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 
-  .tree-header {
-    padding: 1em;
+  header.tree-header {
+    display: contents;
+
+    > * {
+      padding-inline: 1rem;
+    }
 
     #app {
+      position: sticky;
+      top: 0;
+
+      margin-bottom: 1em;
+      padding: 0.5em 1em;
+      background-color: #fff;
+
       display: flex;
       flex-direction: column;
       gap: 0.5em;
@@ -79,8 +90,9 @@ body.tree {
 
 #toot-tree {
   flex-grow: 1;
+  padding-inline: 1em;
   background-color: #aaa;
-  padding: 1em;
+
   &:empty {
     display: none;
   }
@@ -318,10 +330,6 @@ h1 {
   background-color: #eee;
   font-size: 150%;
   font-weight: bold;
-}
-body.tree h1 {
-  margin-inline: -1rem;
-  padding-inline: 1rem;
 }
 
 pre {
