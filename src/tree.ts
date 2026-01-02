@@ -412,9 +412,7 @@ function renderUnfollowed(instance: string, id: string) {
   tootTreeEl.replaceChildren(/* ...with nothing */);
 }
 
-async function renderDetails() {
-  const details = await db.get("treeDetails", key);
-  if (!details) return;
+async function renderDetails(details: DetailEntry) {
   effect(() => {
     switch (displayModeSig.value) {
       case "hierarchical": {
@@ -446,8 +444,27 @@ async function show(withDetails: boolean) {
   }
   renderTreeHead(overview, instance, id);
   if (withDetails) {
-    await renderDetails();
+    const details = await db.get("treeDetails", key);
+    if (!details) {
+      document.title = overview.rootAuthor ?? "Follow Toot";
+      return;
+    }
+
+    const {root} = details;
+    const text = root.spoiler_text || html2text(root.content);
+    document.title = `${root.account.display_name}: "${text}"`;
+
+    await renderDetails(details);
   }
+  document.querySelector<HTMLLinkElement>("link[rel='shortcut icon']")!.href =
+    overview.rootAuthorAvatar ?? "";
+}
+
+function html2text(html: string) {
+  const auxEl = new Document().createElement("div");
+  // TODO sanitize
+  auxEl.innerHTML = html;
+  return auxEl.textContent;
 }
 
 show(true);
