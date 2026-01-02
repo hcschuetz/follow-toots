@@ -166,13 +166,14 @@ function renderToot(toot: Status, rootKey: string, prefix?: HTMLElement | string
     });
 
   let closeOpenButton: HTMLButtonElement;
-  const tootEl = H("div.toot",
+  const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
     H("div.toot-head",
       prefix,
       closeOpenButton =
       H("button.close-open",
         {"@click": async () => toggleClosed(toot.id, rootKey)}),
       headerLinks("status"),
+      H("span.visibility", `[${toot.visibility}]`),
       H("span.toot-created", new Date(toot.created_at).toLocaleString("sv")),
       H("img.toot-author-avatar", {
         src: account.avatar_static,

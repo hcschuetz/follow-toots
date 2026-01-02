@@ -131,7 +131,7 @@ body.tree {
     max-width: var(--page-width);
     border-radius: 0.5em;
     margin: 0.5em 0;
-    background-color: #eee;
+    background-color: #ff0;
     .toot-head {
       padding: 5px 1em;
       display: flex;
@@ -162,6 +162,16 @@ body.tree {
         }
       }
     }
+    &.visibility-public > .toot-head {
+      background-color: #eee;
+      > .visibility {
+        display: none;
+      }
+    }
+    &.visibility-unlisted > .toot-head {
+      background-color: #eeb;
+    }
+    /* TODO also distinguish visibility "private" from "direct"? */
     summary {
       margin-block: 0.5em;
       border-radius: 4px;
