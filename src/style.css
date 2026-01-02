@@ -133,7 +133,9 @@ body.tree {
     margin: 0.5em 0;
     background-color: #ff0;
     .toot-head {
+      border-radius: 0.5em;
       padding: 5px 1em;
+
       display: flex;
       flex-wrap: wrap;
       align-items: center;
