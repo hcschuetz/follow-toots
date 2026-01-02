@@ -45,3 +45,22 @@ export default function emojify(text: string, emojis: CustomEmoji[] = []): Docum
 //   {shortcode: "bar", static_url: "http://example.org/bar"},
 //   {shortcode: "baz", static_url: "http://example.org/baz"},
 // ] as CustomEmoji[]).childNodes);
+
+export
+function deepEmojify(emojis: CustomEmoji[]): (el: HTMLElement) => void {
+  function descend(el: HTMLElement) {
+    for (const child of el.childNodes) {
+      if (child instanceof HTMLElement) {
+        descend(child);
+      } else if (child instanceof Text) {
+        const emojified = emojify(child.data, emojis);
+        if (![...emojified.children].every(part => part instanceof Text)) {
+          el.replaceChild(emojified, child);
+        }
+      } else {
+        console.error("unexpected value to emojify:", child);
+      }
+    }
+  }
+  return descend;
+}
