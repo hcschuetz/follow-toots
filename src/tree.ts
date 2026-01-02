@@ -11,25 +11,30 @@ import { linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 import emojify from './emojify';
 import A_blank from './A_blank';
 
-{
-  // The search query should provide instance and toot id, but we also accept
-  // URLs from various mastodon frontends, given as query parameter "url".
-  // In the latter case we transform it to standard form.
-  const subUrl = new URLSearchParams(location.search).get("url");
-  if (subUrl) {
-    try {
-      const [instance, id] = url2key(subUrl) ?? closeWindow();
-      const newURL = new URL(location.href);
-      newURL.search = new URLSearchParams({instance, id}).toString();
-      window.history.replaceState({}, '', newURL);
-      if (!await (await database).get("treeOverview", `${instance}/${id}`)) {
-        // no "await" => load tree in background:
-        fetchTree(instance, id);
-      }
-    } catch (e) {
-      alert(`something went wrong when analyzing the url "${subUrl}": ${e}`);
+// The hash should have the format of a search query.
+// (We are not using the search query as this would cause
+// unnecessary page fetches for varying parameters and also
+// leak somewhat private data to the site hoster.)
+// In standard form there are parameters "instance" and "id".
+const params = new URLSearchParams(location.hash.substring(1));
+
+// Accept an URL from one of various mastodon frontends as
+// parameter "url" and convert to standard form.
+try {
+  const url = params.get("url");
+  if (url) {
+    const [instance, id] = url2key(url) ?? closeWindow();
+    params.delete("url");
+    params.set("instance", instance);
+    params.set("id", id);
+    window.history.replaceState({}, '', "#" + params);
+    if (!await (await database).get("treeOverview", `${instance}/${id}`)) {
+      // no "await" => load tree in background:
+      fetchTree(instance, id);
     }
   }
+} catch (e) {
+  alert(`something went wrong when adapting the hash: ${e}`);
 }
 
 function closeWindow(): never {
@@ -38,7 +43,6 @@ function closeWindow(): never {
   throw "Window was closed neither automatically nor manually."
 }
 
-const params = new URLSearchParams(location.search);
 // TODO report problem if instance or value are missing or look strange
 const key = `${params.get("instance")}/${params.get("id")}`;
 

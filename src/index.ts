@@ -102,7 +102,7 @@ async function show() {
         H("a",
           {
             title: `@${o.rootAcct} on ${o.instance}`,
-            href: `tree.html?${
+            href: `tree.html#${
               new URLSearchParams({instance: o.instance, id: o.id})
             }`,
           },
