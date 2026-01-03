@@ -99,8 +99,7 @@ async function fetchTree(instance: string, id: string) {
         rootAuthorAvatar: root.account.avatar_static,
         rootAccountEmojis: root.account.emojis,
         rootAcct: root.account.acct,
-        missingDescendants:
-          totalRepliesCount(root, descendants) - descendants.length,
+        nExpectedDescendants: totalRepliesCount(root, descendants),
       }));
       const details = tx.objectStore("treeDetails");
       await details.put({

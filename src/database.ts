@@ -18,7 +18,7 @@ interface OverviewEntry {
   lastCreatedAt?: Date;
   nDescendants?: number;
   nOpen?: number;
-  missingDescendants: number;
+  nExpectedDescendants?: number;
 };
 
 export

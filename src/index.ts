@@ -112,12 +112,10 @@ async function show() {
       H("div.right",
         `${1 + (o.nDescendants ?? 0)}`,
         el => {
-          if (o.missingDescendants) {
+          if (o.nDescendants !== o.nExpectedDescendants) {
             el.classList.add("warn");
-            el.textContent = "> " + el.textContent;
-            el.title =
-              `At least ${o.missingDescendants} more toot(s) missing.\n` +
-              `(Mastodon restricts the tree provided to unauthenticated clients.)`;
+            el.textContent = "≈" + el.textContent;
+            el.title = `Expected ${(o.nExpectedDescendants ?? 0) + 1} toot(s).`;
           }
         }
       ),

@@ -63,12 +63,9 @@ body.tree {
           font-weight: bold;
         }
       }
-      .tree-head-missing {
-        box-sizing: border-box;
-        max-width: var(--page-width);
-        border-radius: 0.5em;
-        padding: 2px 1em;
-        background-color: #ff0;
+      .tree-head-statistics {
+        display: flex;
+        gap: 1em;
       }
       .tree-head-buttons {
         display: flex;
@@ -105,7 +102,7 @@ body.tree {
       &::marker {
         content: "";
       }
-      &.missing-children {
+      &.children-mismatch {
         box-sizing: border-box;
         max-width: var(--page-width);
         border-radius: 0.5em;
@@ -208,7 +205,7 @@ body.tree {
             margin-bottom: 0;
           }
         }
-        /* TODO make these hacks configurable: */
+        /* TODO make these hacks configurable?: */
         span.ellipsis::after {
           content: "...";
         }

@@ -6,7 +6,6 @@ import database, { type DetailEntry, type OverviewEntry, type SubTree } from './
 import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
-import type { Status } from './mastodon-entities';
 import emojify from './emojify';
 import renderToot, { type LinkConfig } from './renderToot';
 import sanitize from './sanitize';
@@ -133,15 +132,18 @@ new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 
 readLinkConfig();
 
-function renderMissingToots(toot: Status, children: SubTree[]): HTMLElement | void {
-  const nMissing = toot.replies_count - children.length;
-  if (!nMissing) return;
-  return H("li.missing-children",
-    `${nMissing} more repl${nMissing === 1 ? "y" : "ies"} not displayed.`,
-    H("br"),
-    `(Mastodon restricts the tree provided to unauthenticated clients.)`,
-
-  );
+function renderChildrenMismatch(diff: number): HTMLElement | void {
+  if (diff) {
+    return H("li.children-mismatch",
+      `Mismatch: Found ${
+        Math.abs(diff)
+      } ${
+        Math.abs(diff) === 1 ? "child" : "children"
+      } ${
+        diff < 0 ? "less" : "more"
+      } than expected.`,
+    );
+  }
 }
 
 function renderTootTree(details: DetailEntry): void {
@@ -165,7 +167,7 @@ function renderTootTree(details: DetailEntry): void {
       ),
       H("ul.tree-node",
         ...otherChildren.map(subtree => H("li", ...descend(subtree))),
-        renderMissingToots(toot, children),
+        renderChildrenMismatch(children.length - toot.replies_count),
       ),
       ...selfReply
       ? descend(selfReply, threadPos)
@@ -203,6 +205,13 @@ const displayModes = ["hierarchical", "chronological", "root + open"] as const;
 type DisplayMode = (typeof displayModes)[number]
 const displayModeSig = signal<DisplayMode>("hierarchical");
 
+const explainMismatch =
+`Possible reasons for a mismatch between expected and actual number of toots:
+- Without authentication Mastodon reports at most 60 descendants.
+- Some toots might be non-public.
+- Replies or reply counts might not yet be propagated to your instance.
+- ...`;
+
 function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
   const {rootAuthor, rootAccountEmojis} = overview;
   appEl.replaceChildren(
@@ -221,22 +230,15 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
       overview.lastCreatedAt?.toLocaleString("sv"),
       `\u2003last fetched ${overview.lastRetrievalDate?.toLocaleString("sv") ?? "-"}`
     ),
-    H("span.tree-head-statistic",
-      H("span",
-        `${1 + (overview.nDescendants ?? 0)} toot(s)`,
-        el => {
-          if (overview.missingDescendants) {
-            el.textContent = "> " + el.textContent;
-          }
-        }
-      ),
-      H("span", `\u2003${overview.nOpen ?? "??"} open`)
+    H("span.tree-head-statistics",
+      H("span", `${1 + (overview.nDescendants ?? 0)} toot(s)`),
+      overview.nDescendants !== overview.nExpectedDescendants
+        ? H("span.warn",
+          {title: explainMismatch},
+          `${(overview.nExpectedDescendants ?? 0) + 1} expected`
+        ) : "",
+      H("span", `${overview.nOpen ?? "??"} open`)
     ),
-    overview?.missingDescendants
-      ? H("div.tree-head-missing",
-        `At least ${overview.missingDescendants} more toot(s) are not displayed.
-        (Mastodon restricts the tree provided to unauthenticated clients.)`
-      ) : "",
     H("div.tree-head-buttons",
       H("button", {
         textContent: "[−] Close all",
