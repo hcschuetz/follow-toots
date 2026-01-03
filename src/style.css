@@ -208,6 +208,16 @@ body.tree {
             margin-bottom: 0;
           }
         }
+        /* TODO make these hacks configurable: */
+        span.ellipsis::after {
+          content: "...";
+        }
+        span.invisible {
+          display: inline-block;
+          width: 0;
+          text-wrap-mode: nowrap;
+          overflow-x: hidden;
+        }
       }
       details.sensitive {
         summary::after {
