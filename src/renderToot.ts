@@ -4,6 +4,7 @@ import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
 import { linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
 import type { Observation } from "./Observation";
+import sanitize from "./sanitize";
 
 export 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
@@ -55,8 +56,7 @@ function renderToot(
     () => {
       let body: HTMLElement =
       H("div.toot-body",
-        // TODO sanitize
-        H("div.toot-content", {innerHTML: toot.content}, deepEmojify(toot.emojis)),
+        H("div.toot-content", ...sanitize(toot.content), deepEmojify(toot.emojis)),
 
         !toot.media_attachments?.length ? undefined :
         () => {

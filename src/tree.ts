@@ -7,9 +7,9 @@ import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import type { Status } from './mastodon-entities';
-import { type LinkableFeature } from './linkConfigConfig';
 import emojify from './emojify';
 import renderToot, { type LinkConfig } from './renderToot';
+import sanitize from './sanitize';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -339,8 +339,7 @@ async function show(withDetails: boolean) {
 
 function html2text(html: string) {
   const auxEl = new Document().createElement("div");
-  // TODO sanitize
-  auxEl.innerHTML = html;
+  auxEl.append(...sanitize(html));
   return auxEl.textContent;
 }
 

@@ -74,3 +74,12 @@ function H<E extends keyof HTMLElementTagNameMap>(
 
   return el;
 }
+
+/**
+ * A variant of `H` with weaker typing.
+ *
+ * (`H` could have been overloaded with this weaker type, but the explicit
+ * "opt-in" by appending the underscore provides a bit more type safety.)
+ */
+export const H_ =
+  H as (tagAndClasses: string, ...rest: HParam<HTMLElement>[]) => HTMLElement;
