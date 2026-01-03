@@ -7,10 +7,10 @@ export default (
 ): HTMLAnchorElement =>
   H("a",
     {
-      className: classes.split(/[ \.]/).join(" ").trim(),
       href,
       target: "_blank",
       rel: "noopener noreferrer",
     },
+    el => classes.split(/[ \.]/).forEach(cls => cls && el.classList.add(cls)),
     ...rest
   );

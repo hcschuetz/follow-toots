@@ -48,7 +48,9 @@ function H<E extends keyof HTMLElementTagNameMap>(
 ): HTMLElementTagNameMap[E] {
   const [tagName, ...classes] = tagAndClasses.split(".");
   const el = document.createElement<E>(tagName as E);
-  el.className = classes.join(" ");
+  for (const cls of classes) {
+    el.classList.add(cls);
+  }
 
   for (const param of rest) {
     const item = typeof param === "function" ? param(el) : param;
