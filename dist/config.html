@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Follow Toots - Configuration</title>
+  <script type="module" crossorigin src="./assets/config-CXtaCPDb.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/H-DvoLG5ED.js">
+  <link rel="modulepreload" crossorigin href="./assets/linkConfigConfig-6AgJfi2T.js">
+  <link rel="stylesheet" crossorigin href="./assets/H-CyF8zBIw.css">
+</head>
+<body>
+  <nav>
+    <a href=".">Overview</a>
+    <a href="about.html">About</a>
+    <a href="config.html">Configuration</a>
+    <!-- TODO add href -->
+    <a>Source</a>
+  </nav>
+
+  <h1>Follow Toots - Configuration</h1>
+
+  <h2>A Bookmarklet for Improved Usability</h2>
+  <p>
+    This application is not integrated in mastodon clients.
+    That is, those clients do not provide links or buttons
+    to follow a toot in this application here.
+    To provide you with a comfortable way of following toots nevertheless,
+    you can set up a "bookmarklet" in your browser, that is,
+    a bookmark whose address consists of JavaScript code.
+  </p>
+  <p>
+    Create a bookmark with a name such as "follow" and fill its address field
+    with the following code:
+  </p>
+  <div class="bookmarklet-container">
+    <code id="bookmarklet"></code>
+    <script>
+      document.querySelector("#bookmarklet").textContent =
+`javascript:window.open(
+  "${new URL("tree.html", location.href)}#"
+  +
+  new URLSearchParams({url: document.location})
+)`;
+    </script>
+    <button onclick="
+      navigator.clipboard.writeText(
+        document.querySelector('#bookmarklet').textContent
+      );
+    ">Copy</button>
+  </div>
+  <p class="warn">
+    Note:
+    <br>
+    Whenever you use somebody's code (such as this code here)
+    in a bookmarklet, read it carefully and check that it's harmless.
+    Otherwise you're exposing yourself to a security risk.
+    <br>
+    (And if you used the "Copy" button, make sure that it has really copied
+    the displayed code to the clipboard, not something malicious.)
+  </p>
+  <p>
+    Then clicking this bookmarklet will take you from a mastodon toot to a page
+    following the replies to that toot.
+    Note that you have to be on a page for a particular toot
+    (not on your home feed, some profile page, or ...).
+    If you are on a non-toot page, the opened toot-following page will fail
+    in some way.
+  </p>
+  <p>
+    You can use the bookmarklet from
+    plain mastodon clients, from phanpy.social or from elk.zone.
+  </p>
+  <p>
+    If you always use the bookmarklet to add new trees and
+    never the URL input at the bottom of the overview page,
+    you might find the latter distracting.
+    You can hide it by checking the following checkbox:
+  </p>
+  <div class="checkbox-container">
+    <label>
+      <input type="checkbox" id="hide-url-input"> Hide URL input
+    </label>
+  </div>
+
+  <h2>Show Toot and Profile Links</h2>
+  <p>
+    If some of the boxes below are checked,
+    toot headers will be enriched with links to
+    the toot or to the author's profile.
+    Links can point to plain mastodon or to some specific frontends.
+  </p>
+
+  <div id="config-links"></div>
+
+  <h2>Access Tokens</h2>
+
+  <p>
+    First of all: You <strong>can</strong> use this application
+    without authenticating at mastodon instances.
+    But there are situations where it might make sense to authenticate:
+  </p>
+  <ul>
+    <li>If you want to see toots with restricted visibility.</li>
+    <li>
+      If you want to follow a toot with more than 60 descendants.
+      (Mastodon reports at most 60 descendants to unauthenticated users.)
+    </li>
+    <li>
+      If you have participated in polls and want to see your own votes.
+    </li>
+  </ul>
+  <p>
+    To enable authentication, add a line for each relevant instance
+    to the table below.
+    Usually you will need authentication only for a single instance,
+    namely the one <strong>you</strong> are using.
+    It does not matter from which instance the toots were sent
+    as long as they are available on your instance.
+  </p>
+  <p>
+    To get an access token, go to
+    <code>https://<em>&lt;your instance&gt;</em>/settings/applications</code>
+    and click the "New application" button.
+    (I assume that you are already logged in.)
+  </p>
+  <p>
+    On the page that opens, fill in the fields:
+  </p>
+  <ul>
+    <li>
+      The application name might be something like "Follow Toots".
+      This is for you to recognize the token later, e.g., if you want
+      to remove it.
+    </li>
+    <li>
+      You may enter <code id="app-url"></code> as the application website
+      as a reminder.
+      <script>
+        document.querySelector("#app-url").textContent =
+          new URL(".", location.href);
+      </script>
+    </li>
+    <li>
+      Leave the "Redirect URI" field unchanged.
+      (<code>urn:ietf:wg:oauth:2.0:oob</code>)
+    </li>
+    <li>
+      Check "read:statuses" and uncheck all other scopes.
+      ("Status" is the technical term for "toot".)
+    </li>
+    <li>
+      Press the submit button at the bottom of the page.
+    </li>
+  </ul>
+  <p>
+    Now you see a list of applications for which you have created
+    access tokens.  Click the newly created one.
+  </p>
+  <p>
+    The page that opens lets you edit the values you have provided.
+    But we are only interested in the field "Your access token".
+    Use this value as the token for your instance.
+  </p>
+  <p>
+    Finally, if you trust this web application here not to abuse the
+    access to your mastodon account (read-only and limited to toots),
+    copy the instance name and the access token to the input fields
+    at the bottom of the table and press the "Save" button.
+  </p>
+
+  <div id="access-tokens"></div>
+
+  <p>More remarks:</p>
+  <ul>
+    <li>
+      Tokens will be used as soon as you add or reload trees from
+      the respective instances.
+    </li>
+    <li>
+      The access tokens will be stored persistently in your browser.
+      Remove them if you want to make sure that they cannot be abused.
+      You can also invalidate tokens in the settings of your mastodon account.
+    </li>
+    <li>
+      A more refined version of this application might
+      provide a UI involving your mastodon instance to provide
+      access interactively.
+    </li>
+  </ul>
+
+
+</body>
+</html>
