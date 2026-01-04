@@ -29,7 +29,26 @@ export default (urlString: string): [string, string] | undefined => {
       );
     }
     default: {
-      // Let's hope we have a standard mastodon client.
+      // First check if the url references a tree page
+      // from a follow-toots application elsewhere.
+      if (url.pathname.endsWith("/tree.html") && url.hash) {
+        const params = new URLSearchParams("?" + url.hash.substring(1));
+        const instance = params.get("instance"), id = params.get("id");
+        if (instance && id && idRegExp.test(id)) {
+          if (url.origin === location.origin) {
+            alert(`
+              While taking over a toot tree from another follow-toots
+              installation is supported,
+              it was probably a mistake to apply the bookmarklet to
+              the same installation.
+            `.replaceAll(/\s+/g, " "));
+            return undefined;
+          }
+          return [instance, id];
+        }
+      }
+
+      // Now let's hope we have a standard mastodon client.
 
       // https://instan.ce/[deck/]@user[@home.instan.ce]/12345
       // or
