@@ -75,7 +75,8 @@ async function setClosedIdsSignal() {
 }
 
 const appEl = document.querySelector("#app")!;
-const tootTreeEl = document.querySelector("#toot-tree")!;
+const ancestorsEl = document.querySelector("#ancestors")!;
+const descendantsEl = document.querySelector("#descendants")!;
 
 async function openAll() {
   const overview = await db.get("treeOverview", key);
@@ -159,9 +160,9 @@ function renderTootTree(details: DetailEntry): void {
     return [
       renderToot(
         toot, instance,
-        observeClosed(toot.id),
-        toggleClosed(toot.id, key),
         observeLinkConfig,
+        toggleClosed(toot.id, key),
+        observeClosed(toot.id),
         threadPosMarker,
       ),
       H("ul.tree-node",
@@ -174,7 +175,7 @@ function renderTootTree(details: DetailEntry): void {
     ];
   }
 
-  tootTreeEl.replaceChildren(...descend(tootTree));
+  descendantsEl.replaceChildren(...descend(tootTree));
 }
 
 async function renderTootList(details: DetailEntry, restricted: boolean) {
@@ -184,15 +185,15 @@ async function renderTootList(details: DetailEntry, restricted: boolean) {
     restricted
     ? descendants.filter(toot => !closedIdsSignal.value?.has(toot.id))
     : descendants;
-  tootTreeEl.replaceChildren(
+  descendantsEl.replaceChildren(
     H("ul.toot-list",
       ...[root, ...displayedDescendants].map(toot =>
         H("li",
           renderToot(
             toot, instance,
-            observeClosed(toot.id),
-            toggleClosed(toot.id, key),
             observeLinkConfig,
+            toggleClosed(toot.id, key),
+            observeClosed(toot.id),
           ),
         )
       ),
@@ -287,10 +288,31 @@ function renderUnfollowed(instance: string, id: string) {
       " it or close this tab.",
     ),
   );
-  tootTreeEl.replaceChildren(/* ...with nothing */);
+  ancestorsEl.replaceChildren(/* ...with nothing */);
+  descendantsEl.replaceChildren(/* ...with nothing */);
+}
+
+function renderAncestors(details: DetailEntry) {
+  const ancestors = details.ancestors;
+  if (ancestors.length === 0) {
+    ancestorsEl.replaceChildren(/* with nothing */);
+    return;
+  }
+  const rootAncestor = ancestors[0];
+  const [instance] = key.split("/", 1); // a bit hacky
+  ancestorsEl.replaceChildren(
+    H("div.root-ancestor",
+      renderToot(rootAncestor, instance, observeLinkConfig),
+      H("div.more-ancestors",
+        ancestors.length === 1 ? "↓" :
+        `↓\u2003${ancestors.length - 1} more ancestor toot(s)`
+      )
+    )
+  )
 }
 
 async function renderDetails(details: DetailEntry) {
+  renderAncestors(details);
   effect(() => {
     switch (displayModeSig.value) {
       case "hierarchical": {
@@ -306,7 +328,7 @@ async function renderDetails(details: DetailEntry) {
         break;
       }
       default: {
-        tootTreeEl.replaceChildren("Oops");
+        descendantsEl.replaceChildren("Oops");
       }
     }
   });

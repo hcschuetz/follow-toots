@@ -88,8 +88,21 @@ body.tree {
 
 #toot-tree {
   flex-grow: 1;
-  padding-inline: 1em;
   background-color: #aaa;
+
+  #ancestors {
+    padding: 0.2em 1em;
+    background-color: #888;
+
+    .more-ancestors {
+      margin-block: 0.5em;
+      padding-inline: 1em;
+    }
+  }
+
+  #descendants {
+    padding-inline: 1em;
+  }
 
   &:empty {
     display: none;

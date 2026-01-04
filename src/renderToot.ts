@@ -13,9 +13,9 @@ export default
 function renderToot(
   toot: Status,
   instance: string,
-  observeClosed: Observation<boolean>,
-  toggleClosed: () => unknown,
   observeLinkConfig: Observation<LinkConfig | undefined>,
+  toggleClosed?: () => unknown,
+  observeClosed?: Observation<boolean>,
   prefix?: HTMLElement | string,
 ): HTMLElement {
 
@@ -37,12 +37,12 @@ function renderToot(
       });
     });
 
-  let closeOpenButton: HTMLButtonElement;
+  let closeOpenButton: HTMLButtonElement | undefined;
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
     H("div.toot-head",
       prefix,
       closeOpenButton =
-      H("button.close-open", {"@click": toggleClosed}),
+      toggleClosed && H("button.close-open", {"@click": toggleClosed}),
       headerLinks("status"),
       H("span.visibility", `[${toot.visibility}]`),
       H("span.toot-created", new Date(toot.created_at).toLocaleString("sv")),
@@ -132,10 +132,14 @@ function renderToot(
       }
 
       body.classList.add("toot-full-body");
-      observeClosed(closed => {
-        closeOpenButton.textContent = closed ?  "+" : "−";
-        body.hidden = closed;
-      });
+      if (observeClosed) {
+        observeClosed(closed => {
+          closeOpenButton!.textContent = closed ?  "+" : "−";
+          body.hidden = closed;
+        });
+      } else {
+        body.hidden = true;
+      }
       return body;
     },
   );
