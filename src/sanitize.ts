@@ -54,6 +54,7 @@ const elementPermissions: ElementPermissions = new Map(Object.entries({
   BR: kept(),
   I: kept(),
   B: kept(),
+  U: kept(),
   STRONG: kept(),
   EM: kept(),
   UL: kept(),
