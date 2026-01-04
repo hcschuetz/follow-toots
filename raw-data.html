@@ -6,12 +6,7 @@
   <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
-  <nav>
-    <a href=".">Overview</a>
-    <a href="about.html">About</a>
-    <a href="config.html">Configuration</a>
-    <a href="https://github.com/hcschuetz/follow-toots">Source</a>
-  </nav>
+  <nav id="nav"></nav>
 
   <h1>Follow Toots - Raw Data</h1>
 
@@ -35,6 +30,7 @@
 
   <pre id="output"></pre>
 
+  <script type="module" src="src/add-nav.ts"></script>
   <script type="module" src="src/rawData.ts"></script>
 </body>
 </html>

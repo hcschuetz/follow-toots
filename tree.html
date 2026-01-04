@@ -8,12 +8,7 @@
 </head>
 <body class="tree">
   <header class="tree-header">
-    <nav>
-      <a href=".">Overview</a>
-      <a href="about.html">About</a>
-      <a href="config.html">Configuration</a>
-      <a href="https://github.com/hcschuetz/follow-toots">Source</a>
-    </nav>
+    <nav id="nav"></nav>
 
     <h1>Follow Toot</h1>
 
@@ -25,6 +20,7 @@
     <div id="descendants"></div>
   </main>
 
+  <script type="module" src="src/add-nav.ts"></script>
   <script type="module" src="src/tree.ts"></script>
 </body>
 </html>
