@@ -14,6 +14,8 @@ defineConfig({
         index: resolve(__dirname, 'index.html'),
         config: resolve(__dirname, 'config.html'),
         tree: resolve(__dirname, 'tree.html'),
+        about: resolve(__dirname, 'about.html'),
+        rawData: resolve(__dirname, 'raw-data.html'),
       },
     },
   },

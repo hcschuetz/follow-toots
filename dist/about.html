@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Follow Toots - About</title>
+  <link rel="stylesheet" crossorigin href="./assets/style-CyF8zBIw.css">
+</head>
+<body>
+  <nav>
+    <a href=".">Overview</a>
+    <a href="about.html">About</a>
+    <a href="config.html">Configuration</a>
+    <!-- TODO add href -->
+    <a>Source</a>
+  </nav>
+
+  <h1>Follow Toots - About</h1>
+
+  <h2>What is this good for?</h2>
+  <p>
+    Occasionally you see a toot on mastodon and you are interested
+    in the (direct and indirect) answers to that toot.
+    Somebody might have asked an interesting question and you want to see the
+    answers given by other users.
+    Or somebody makes a joke and you expect funny replies.
+    Or ...
+  </p>
+  <p>
+    Mastodon clients display the current "toot tree".
+    If you want to see future replies, you can open the toot in a
+    separate browser tab and reload it occasionally.
+    But then you have to search the tree manually for new toots,
+    which soon becomes tedious.
+  </p>
+  <p>
+    This application makes it more comfortable to "follow" a toot,
+    or actually the replies to it.
+  </p>
+  <h2>Basic Usage</h2>
+  <p>
+    If you want to follow a toot, copy its URL to the field
+    "URL of a toot to follow" in the <a href=".">overview page</a>
+    and add it to your list of followed toots.
+    (This could be made more convenient if your favorite Mastodon client
+    provided a button or link to automate this.
+    But you can get similar convenience by using the bookmarklet provided on
+    the <a href="config.html">configuration page</a>.)
+  </p>
+  <p>
+    Select one of the list entries to see the corresponding tree.
+  </p>
+  <p>
+    Initially all the toots in a tree are open.
+    You can close the toots you have already read
+    by clicking the "−" button.
+    When you reload the tree, closed toots remain closed.
+    Any new toots will be open.
+    This way you find new replies quickly without the need
+    for searching through a tree again and again.
+  </p>
+  <p>
+    Most of the application state is persisted by your browser.
+    It survives closing and re-opening the pages or even a browser restart.
+  </p>
+
+  <h2>More Notes</h2>
+  <ul>
+    <li>
+      The application does not poll for tree updates regularly.
+      You have to click a "reload" button to get the latest data.
+    </li>
+    <li>
+      On the other hand, reloads from one page (for example a tree page)
+      will also be used by other pages (such as the overview page).
+    </li>
+    <li>
+      You can view the descendants of a toot in hierarchical mode (as a tree)
+      and in chronological mode (as a list).
+      There is also a mode where you only see the root toot
+      and any toots you have not yet closed.
+      <br>
+      By the way, the hierarchical view detects threads and displays them
+      without indentation but with numbered toots.
+    </li>
+    <li>
+      The toot display does not yet support all the possible features of a toot,
+      but it should cover the most important cases.
+    </li>
+  </ul>
+</body>
+</html>
