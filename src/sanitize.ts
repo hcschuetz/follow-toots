@@ -44,6 +44,7 @@ const kept = (attrs: Record<string, boolean> = {}): ElementPermission => ({
   keep: true,
   attributes: new Map(Object.entries({...globalAttrs, ...attrs})),
 });
+// @ts-ignore
 const ignored: ElementPermission = { keep: false };
 
 const elementPermissions: ElementPermissions = new Map(Object.entries({
