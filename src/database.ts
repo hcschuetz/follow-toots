@@ -14,6 +14,7 @@ interface OverviewEntry {
   rootAuthorAvatar?: string;
   rootAccountEmojis?: CustomEmoji[];
   rootAcct?: string;
+  teaser?: string;
   rootCreatedAt?: Date;
   lastCreatedAt?: Date;
   nDescendants?: number;

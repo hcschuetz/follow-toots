@@ -2,6 +2,7 @@ import asgn from "./asgn";
 import database, { type OverviewEntry, type SubTree } from "./database";
 import type { Context, Status } from "./mastodon-entities";
 import type { Notifications } from "./Notifications";
+import sanitize from "./sanitize";
 import setupNotifications from "./setupNotifications";
 
 const db = await database;
@@ -88,6 +89,8 @@ async function fetchTree(instance: string, id: string) {
       const tx = db.transaction(["treeOverview", "treeDetails"], "readwrite");
       const overview = tx.objectStore("treeOverview");
       const o = await overview.get(key) ?? {} as OverviewEntry;
+      let teaser = root.spoiler_text || html2text(root.content);
+      if (teaser.length > 140) teaser = teaser.substring(0, 140) + "...";
       await overview.put(asgn(o, {
         key,
         lastRetrievalDate: new Date(),
@@ -99,6 +102,7 @@ async function fetchTree(instance: string, id: string) {
         rootAuthorAvatar: root.account.avatar_static,
         rootAccountEmojis: root.account.emojis,
         rootAcct: root.account.acct,
+        teaser,
         nExpectedDescendants: totalRepliesCount(root, descendants),
       }));
       const details = tx.objectStore("treeDetails");
@@ -113,6 +117,12 @@ async function fetchTree(instance: string, id: string) {
   } catch (caught) {
     console.error(caught);
   }
+}
+
+function html2text(html: string) {
+  const auxEl = new Document().createElement("div");
+  auxEl.append(...sanitize(html));
+  return auxEl.textContent;
 }
 
 const count = <T>(values: T[], pred: (item: T) => boolean) =>

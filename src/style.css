@@ -416,11 +416,12 @@ code {
   overflow-x: auto;
   padding-bottom: 10px;
   display: grid;
-  grid-template-columns: 1fr repeat(6, max-content);
-  gap: 0.3em 0.8em;
+  grid-template-columns: [start] 1fr repeat(6, max-content) [end];
+  gap: 4px 0.8em;
   align-items: first baseline;
 
   .root-author {
+    min-width: 10em;
     img.root-author-icon {
       width: 1.5cap;
       height: 1.5cap;
@@ -428,6 +429,19 @@ code {
       position: relative;
       top: 0.15cap;
     }
+  }
+  .separator {
+    grid-column-start: start;
+    grid-column-end: end;
+    border-bottom: 1px solid #aaa;
+  }
+  .teaser {
+    grid-column-start: start;
+    grid-column-end: end;
+    max-width: 100%;
+    font-size: 90%;
+    text-wrap-mode: nowrap;
+    overflow-x: hidden;
   }
 }
 

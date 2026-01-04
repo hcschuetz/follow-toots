@@ -96,6 +96,7 @@ async function show() {
     H("button", {"@click": reloadAll}, "⟳ Reload All"),
     H("button", {"@click": deleteAll}, "✗ Remove All"),
     ...result.flatMap(o => [
+      H("div.separator"),
       H("span.root-author",
         H("img.root-author-icon", {src: o.rootAuthorAvatar}),
         "\u2002",
@@ -124,6 +125,7 @@ async function show() {
       dateEl(o.lastRetrievalDate),
       H("button", {"@click": () => fetchTree(o.instance, o.id)}, "⟳ Reload"),
       H("button", {"@click": () => deleteTree(o)}, "✗ Remove"),
+      ...o.teaser ? [H("div.teaser", o.teaser)] : [],
     ]),
   );
 }

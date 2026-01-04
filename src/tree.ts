@@ -8,7 +8,6 @@ import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
 import renderToot, { type LinkConfig } from './renderToot';
-import sanitize from './sanitize';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -321,28 +320,20 @@ async function show(withDetails: boolean) {
     renderUnfollowed(instance, id);
     return;
   }
+
+  document.title = `${overview.rootAuthor}: "${overview.teaser}"`;
+  document.querySelector<HTMLLinkElement>("link[rel='shortcut icon']")!.href =
+    overview.rootAuthorAvatar ?? "";
   renderTreeHead(overview, instance, id);
+
   if (withDetails) {
     const details = await db.get("treeDetails", key);
     if (!details) {
       document.title = overview.rootAuthor ?? "Follow Toot";
       return;
     }
-
-    const {root} = details;
-    const text = root.spoiler_text || html2text(root.content);
-    document.title = `${root.account.display_name}: "${text}"`;
-
     await renderDetails(details);
   }
-  document.querySelector<HTMLLinkElement>("link[rel='shortcut icon']")!.href =
-    overview.rootAuthorAvatar ?? "";
-}
-
-function html2text(html: string) {
-  const auxEl = new Document().createElement("div");
-  auxEl.append(...sanitize(html));
-  return auxEl.textContent;
 }
 
 show(true);
