@@ -72,7 +72,7 @@ function* sanitizeAttrs(el: HTMLElement, permissions: AttributePermissions) {
         console.warn("skipping attribute", attr);
         break;
       case true:
-        yield [attr.name, attr.value];
+        yield attr;
         break;
       case false:
         // ignore silently
@@ -97,11 +97,10 @@ function* sanitizeNodes(nodes: NodeListOf<ChildNode>)
           console.warn("skipping element", node);
           break;
         case true: {
-          const newEl = H_(node.tagName, ...sanitizeNodes(node.childNodes));
-          for (const [name, value] of sanitizeAttrs(node, permissions.attributes)) {
-            newEl.setAttribute(name, value);
-          }
-          yield newEl;
+          yield H_(node.tagName,
+            ...sanitizeAttrs(node, permissions.attributes),
+            ...sanitizeNodes(node.childNodes),
+          );
           break;
         }
         case false:

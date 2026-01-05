@@ -14,7 +14,7 @@ type AtEventHandlers = {
 
 type HItem<T extends HTMLElement> =
 | Partial<SettableProps<T> | AtEventHandlers>
-| HTMLElement | DocumentFragment| string
+| HTMLElement | DocumentFragment | Attr | string
 | void | null
 ;
 
@@ -35,6 +35,8 @@ type HParam<T extends HTMLElement> = HItem<T> | ((el: T) => HItem<T>);
    *   - Any other pair `<property>: <value>`
    *     sets a property of the new element.
    * - An `HTMLElement` or a string, which is added as a child.
+   * - A `DocumentFragment`, whose contained nodes are added as children.
+   * - An `Attr`, a copy of which will be added to the new element.
    * - `null` or `undefined`, which is ignored.
    * - A function taking the new `HTMLElement` and returning a value of
    *   one of the previous types.
@@ -60,6 +62,8 @@ function H<E extends keyof HTMLElementTagNameMap>(
       el.append(item);
     } else if (item instanceof DocumentFragment) {
       el.append(...item.childNodes);
+    } else if (item instanceof Attr) {
+      el.setAttribute(item.name, item.value);
     } else {
       if (item.constructor !== Object) {
         console.warn(`Attributes for ${tagAndClasses} not a plain object: ${item}`);
@@ -80,8 +84,8 @@ function H<E extends keyof HTMLElementTagNameMap>(
 /**
  * A variant of `H` with weaker typing.
  *
- * (`H` could have been overloaded with this weaker type, but the explicit
- * "opt-in" by appending the underscore provides a bit more type safety.)
+ * (`H` could have been overloaded with this weaker type,
+ * but that would have lost some type safety.)
  */
 export const H_ =
   H as (tagAndClasses: string, ...rest: HParam<HTMLElement>[]) => HTMLElement;
