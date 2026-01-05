@@ -1,7 +1,7 @@
 import { effect, signal } from '@preact/signals-core';
 
 import { deleteTree, fetchTree, updateClosed } from './actions';
-import H from './H';
+import H, { setupH } from './H';
 import database, { type DetailEntry, type OverviewEntry, type SubTree } from './database';
 import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
@@ -76,9 +76,9 @@ async function setClosedIdsSignal() {
   closedIdsSignal.value = (await db.get("treeOverview", key))?.closedIds;
 }
 
-const appEl = document.querySelector("#app")!;
-const ancestorsEl = document.querySelector("#ancestors")!;
-const descendantsEl = document.querySelector("#descendants")!;
+const appEl = document.querySelector<HTMLElement>("#app")!;
+const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
+const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
 /**
  * An id for the current "toot version"
@@ -162,46 +162,50 @@ function renderChildrenMismatch(diff: number): HTMLElement | void {
 
 function renderTootTree(details: DetailEntry): void {
   const {key, tootTree} = details;
-  function descend({toot, children}: SubTree, prevThreadPos = 0): HTMLElement[] {
+
+  function* descend({toot, children}: SubTree, prevThreadPos = 0):
+    Generator<HTMLElement, void, unknown>
+  {
+    // If one of the replies to this toot is by the same account,
+    // we have a starting or continued thread.
     const selfReply =
       children.find(child => child.toot.account.id === toot.account.id);
-    const otherChildren = children.filter(subtree => subtree !== selfReply);
     const threadPos = prevThreadPos + 1;
     const threadPosMarker =
       prevThreadPos > 0 || selfReply ? H("span.thread-pos", `#${threadPos}`) :
       undefined;
     const [instance] = key.split("/", 1); // a bit hacky
-    return [
-      renderToot(
-        toot, instance,
-        observeLinkConfig,
-        toggleClosed(versionId(toot), key),
-        observeClosed(versionId(toot)),
-        threadPosMarker,
+    yield renderToot(
+      toot, instance,
+      observeLinkConfig,
+      toggleClosed(versionId(toot), key),
+      observeClosed(versionId(toot)),
+      threadPosMarker,
+    );
+    yield H("ul.tree-node",
+      children.map(subtree =>
+        subtree === selfReply ? null : H("li", descend(subtree))
       ),
-      H("ul.tree-node",
-        ...otherChildren.map(subtree => H("li", ...descend(subtree))),
-        renderChildrenMismatch(children.length - toot.replies_count),
-      ),
-      ...selfReply
-      ? descend(selfReply, threadPos)
-      : [],
-    ];
+      renderChildrenMismatch(children.length - toot.replies_count),
+    );
+    if (selfReply) {
+      yield* descend(selfReply, threadPos);
+    }
   }
 
-  descendantsEl.replaceChildren(...descend(tootTree));
+  setupH(descendantsEl, descend(tootTree));
 }
 
-async function renderTootList(details: DetailEntry, restricted: boolean) {
+function renderTootList(details: DetailEntry, restricted: boolean) {
   const {key, root, descendants} = details;
   const [instance] = key.split("/", 1); // a bit hacky
   const displayedDescendants =
     restricted
     ? descendants.filter(toot => !closedIdsSignal.value?.has(versionId(toot)))
     : descendants;
-  descendantsEl.replaceChildren(
+  setupH(descendantsEl,
     H("ul.toot-list",
-      ...[root, ...displayedDescendants].map(toot =>
+      [root, ...displayedDescendants].map(toot =>
         H("li",
           renderToot(
             toot, instance,
@@ -228,7 +232,7 @@ const explainMismatch =
 
 function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
   const {rootAuthor, rootAccountEmojis} = overview;
-  appEl.replaceChildren(
+  setupH(appEl,
     H("div.tree-head-author",
       H("img.tree-head-avatar", { src: overview.rootAuthorAvatar }),
       H("span.tree-head-name",
@@ -272,7 +276,7 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
       })
     ),
     H("div.tree-head-choose-mode",
-      ...displayModes.map(mode => H("label",
+      displayModes.map(mode => H("label",
         H("input",
           {
             type: "radio",
@@ -292,7 +296,7 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
 }
 
 function renderUnfollowed(instance: string, id: string) {
-    appEl.replaceChildren(
+  setupH(appEl,
     H("div", `You are currently not following toot ${id} from ${instance}. `),
     H("div",
       H("button", {
@@ -302,8 +306,8 @@ function renderUnfollowed(instance: string, id: string) {
       " it or close this tab.",
     ),
   );
-  ancestorsEl.replaceChildren(/* ...with nothing */);
-  descendantsEl.replaceChildren(/* ...with nothing */);
+  ancestorsEl.replaceChildren(/* with nothing */);
+  descendantsEl.replaceChildren(/* with nothing */);
 }
 
 function renderAncestors(details: DetailEntry) {
@@ -314,7 +318,7 @@ function renderAncestors(details: DetailEntry) {
   }
   const rootAncestor = ancestors[0];
   const [instance] = key.split("/", 1); // a bit hacky
-  ancestorsEl.replaceChildren(
+  setupH(ancestorsEl,
     H("div.root-ancestor",
       renderToot(rootAncestor, instance, observeLinkConfig),
       H("div.more-ancestors",

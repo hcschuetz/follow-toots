@@ -89,7 +89,7 @@ function* sanitizeNodes(nodes: NodeListOf<ChildNode>)
       yield node.textContent;
     } else if (node instanceof HTMLAnchorElement) {
       // Special treatment: Always open links in a new tab.
-      yield A_blank("", node.href, ...sanitizeNodes(node.childNodes));
+      yield A_blank("", node.href, sanitizeNodes(node.childNodes));
     } else if (node instanceof HTMLElement) {
       const permissions = elementPermissions.get(node.tagName);
       switch (permissions?.keep) {
@@ -98,8 +98,8 @@ function* sanitizeNodes(nodes: NodeListOf<ChildNode>)
           break;
         case true: {
           yield H_(node.tagName,
-            ...sanitizeAttrs(node, permissions.attributes),
-            ...sanitizeNodes(node.childNodes),
+            sanitizeAttrs(node, permissions.attributes),
+            sanitizeNodes(node.childNodes),
           );
           break;
         }

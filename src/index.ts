@@ -1,5 +1,5 @@
 import { deleteTrees as deleteAll, deleteTree, fetchTree, reloadTrees as reloadAll } from './actions';
-import H from './H';
+import H, { setupH } from './H';
 import database from './database';
 import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
@@ -27,8 +27,8 @@ setupNotifications<Notifications>("followToots", {
   }
 });
 
-const theGrid = document.querySelector("#overview")!;
-const newEntry = document.querySelector("#new-entry")!;
+const theGrid = document.querySelector<HTMLElement>("#overview")!;
+const newEntry = document.querySelector<HTMLElement>("#new-entry")!;
 
 let input: HTMLInputElement;
 newEntry.append(
@@ -78,17 +78,16 @@ const dateEl = (date?: Date): HTMLElement | string => {
 }
 
 async function show() {
+  theGrid.replaceChildren(/* ...with nothing */);
   const tx = db.transaction("treeOverview");
-  const result = await tx.store.getAll();
-  if (result.length === 0) {
-    theGrid.replaceChildren(/* ...with nothing */);
-    return;
-  }
-  result.sort((a, b) =>
+  const entries = await tx.store.getAll();
+  if (entries.length === 0) return;
+  entries.sort((a, b) =>
     (a.lastCreatedAt?.getTime() ?? Number.MAX_VALUE) -
     (b.lastCreatedAt?.getTime() ?? Number.MAX_VALUE)
   );
-  theGrid.replaceChildren(
+
+  setupH(theGrid,
     H("div.bold", "Root Author"),
     H("div.bold", "Toots"),
     H("div.bold", "Open"),
@@ -96,7 +95,7 @@ async function show() {
     H("div.bold", "Last Fetch"),
     H("button", {"@click": reloadAll}, "⟳ Reload All"),
     H("button", {"@click": deleteAll}, "✗ Remove All"),
-    ...result.flatMap(o => [
+    entries.map(o => [
       H("div.separator"),
       H("span.root-author",
         H("img.root-author-icon", {src: o.rootAuthorAvatar}),
@@ -126,7 +125,7 @@ async function show() {
       dateEl(o.lastRetrievalDate),
       H("button", {"@click": () => fetchTree(o.instance, o.id)}, "⟳ Reload"),
       H("button", {"@click": () => deleteTree(o)}, "✗ Remove"),
-      ...o.teaser ? [H("div.teaser", o.teaser)] : [],
+      o.teaser && H("div.teaser", o.teaser),
     ]),
   );
 }

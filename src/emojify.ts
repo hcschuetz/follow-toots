@@ -2,49 +2,64 @@
 import H from "./H";
 import type { CustomEmoji } from "./mastodon-entities";
 
-// Mostly compatible with the emojification code at
-// https://github.com/mastodon/mastodon/blob/4bae3da85c8ee935539aacc92429bdb55aaf145e/app/javascript/mastodon/features/emoji/emoji.js#L31,
-// but only for custom emojis (":shortcode:").
-// Hoping that modern browsers support Unicode emojis directly.
-// Also omitting the special light/dark treatment.
-export default function emojify(text: string, emojis: CustomEmoji[] = []): DocumentFragment {
-  const result = new DocumentFragment();
-  const regex = /(?<=:)[^:]+(?=:)/gd;
-  const candidates = text.matchAll(regex);
-  let i = 0;
-  for (;;) {
-    const {value, done} = candidates.next();
-    if (done) break;
-    const code = value[0], [[from, to]] = value.indices!;
-    const emoji = emojis.find(emoji => emoji.shortcode === code);
-    if (emoji) {
-      result.append(
-        text.substring(i, from - 1),
-        H("img.custom-emoji",
-          {
-            // The original uses url or static_url, depending on some config:
-            src: emoji.static_url,
-            alt: code,
-            title: code,
-            draggable: false,
-          },
-        ),
-      );
-      i = to + 1;
-      // Do not convert the next section (even if it is a shortcode)
-      // since its initial ":" has already been used.
-      if (candidates.next().done) break;
-    }
-  }
-  result.append(text.substring(i));
-  return result;
-}
+/**
+ * The emojification logic appears more natural without the quirks,
+ * but with them the behavior is compatible to the default mastodon UI,
+ * at least for my test cases.
+ *
+ * Note:
+ * - The differences appear only in quite specific situations.
+ * - Apparently phanpy does not apply these quirks.
+ */
+const QUIRKS_MODE = true;
 
-// console.dir(emojify("sdfgh:foo:bar:baz:eoriug", [
-//   {shortcode: "foo", static_url: "http://example.org/foo"},
-//   {shortcode: "bar", static_url: "http://example.org/bar"},
-//   {shortcode: "baz", static_url: "http://example.org/baz"},
-// ] as CustomEmoji[]).childNodes);
+/**
+ * Similar to the emojification code at
+ * https://github.com/mastodon/mastodon/blob/4bae3da85c8ee935539aacc92429bdb55aaf145e/app/javascript/mastodon/features/emoji/emoji.js#L31,
+ * but:
+ * - Only for custom emojis (":shortcode:").
+ *   Modern browsers should support Unicode emojis directly.
+ * - Omitting the special light/dark treatment.
+ */
+export default function* emojify(text: string, emojis: CustomEmoji[] = []) {
+  if (emojis === null) {
+    yield text;
+    return;
+  }
+  let pos = text.indexOf(":", 0);
+  if (pos < 0) {
+    yield text;
+    return;
+  }
+  let emittedUntil = 0;
+  for (;;) {
+    // Here i points to a ":" which might start a ":shortcode:".
+    const start = pos + 1;
+    const end = text.indexOf(":", start);
+    if (QUIRKS_MODE && end === start) {pos++; continue;}
+    if (end < 0) break;
+    const code = text.substring(start, end);
+    const emoji = emojis.find(emoji => emoji.shortcode === code);
+    if (!emoji) {
+      pos = end;
+      if (QUIRKS_MODE && (pos = text.indexOf(":", pos+1)) < 0) break;
+      continue;
+    }
+    yield text.substring(emittedUntil, pos);
+    yield H("img.custom-emoji", {
+        // The original uses url or static_url, depending on some config:
+        src: emoji.static_url,
+        alt: code,
+        title: code,
+        draggable: false,
+      },
+    );
+    emittedUntil = end + 1;
+    pos = text.indexOf(":", emittedUntil);
+    if (pos < 0) break;
+  }
+  yield text.substring(emittedUntil);
+}
 
 export
 function deepEmojify(emojis: CustomEmoji[]): (el: HTMLElement) => void {
@@ -53,10 +68,11 @@ function deepEmojify(emojis: CustomEmoji[]): (el: HTMLElement) => void {
       if (child instanceof HTMLElement) {
         descend(child);
       } else if (child instanceof Text) {
-        const emojified = emojify(child.data, emojis);
-        if (![...emojified.children].every(part => part instanceof Text)) {
-          el.replaceChild(emojified, child);
-        }
+        const emojified = [...emojify(child.data, emojis)];
+        if (emojified.length === 1 && typeof emojified[0] === "string") continue;
+        const f = new DocumentFragment();
+        f.append(...emojified);
+        el.replaceChild(f, child);
       } else {
         console.error("unexpected value to emojify:", child);
       }

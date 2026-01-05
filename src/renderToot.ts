@@ -46,12 +46,10 @@ function renderToot(
       toggleClosed && H("button.close-open", {"@click": toggleClosed}),
       headerLinks("status"),
       H("span.visibility", `[${toot.visibility}]`),
-      ...toot.edited_at ? [
+      toot.edited_at ? [
         H("span.toot-created.line-through", formatDate(toot.created_at)),
         H("span.toot-edited", formatDate(toot.edited_at)),
-      ] : [
-        H("span.toot-created", formatDate(toot.created_at)),
-      ],
+      ] : H("span.toot-created", formatDate(toot.created_at)),
       H("img.toot-author-avatar", {
         src: account.avatar_static,
       }),
@@ -62,12 +60,12 @@ function renderToot(
     () => {
       let body: HTMLElement =
       H("div.toot-body",
-        H("div.toot-content", ...sanitize(toot.content), deepEmojify(toot.emojis)),
+        H("div.toot-content", sanitize(toot.content), deepEmojify(toot.emojis)),
 
         !toot.media_attachments?.length ? undefined :
         () => {
           const attachments =
-            H("ul.attachments", ...toot.media_attachments.map(att =>
+            H("ul.attachments", toot.media_attachments.map(att =>
               H("li.attachment",
                 H("img.preview", {
                   src: att.preview_url,
@@ -89,7 +87,7 @@ function renderToot(
 
         poll &&
         H("div.poll",
-          H("ul.poll", ...poll.options.map((option, i) =>
+          H("ul.poll", poll.options.map((option, i) =>
             H("li.poll-option",
               H("span.poll-option-title",
                 // TODO Leave it to CSS to select and place a symbol?
@@ -129,7 +127,7 @@ function renderToot(
           undefined,
         ),
 
-        // TODO more status features (quotes...)
+        // TODO more status features (quotes, ...)
       );
 
       // See the comment on `.sensitive`
@@ -141,9 +139,11 @@ function renderToot(
       if (observeClosed) {
         observeClosed(closed => {
           closeOpenButton!.textContent = closed ?  "+" : "−";
+          closeOpenButton!.title = closed ? "Open toot" : "Close toot"; 
           body.hidden = closed;
         });
       } else {
+        // toot is an ancestor and (at least for now) always closed:
         body.hidden = true;
       }
       return body;

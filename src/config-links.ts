@@ -1,12 +1,12 @@
 import { effect, signal } from "@preact/signals-core";
-import H from "./H";
+import H, { setupH } from "./H";
 import mapObject from "./mapObject";
 import database from "./database";
 import {
   type LinkableFeature, linkableFeatures, linkConfigConfig
 } from "./linkConfigConfig";
 
-const configLinksEl = document.querySelector("#config-links");
+const configLinksEl = document.querySelector<HTMLElement>("#config-links");
 
 const linkConfigurationSigs =
   mapObject(linkableFeatures, () =>
@@ -47,7 +47,7 @@ const linkConfigurationSigs =
   });
 }
 
-configLinksEl!.replaceChildren(
+setupH(configLinksEl!,
   H("div.bold.client-name", "Frontend"),
   ...Object.values(linkableFeatures).map(ft => H("div.bold", ft)),
 
