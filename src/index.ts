@@ -5,6 +5,7 @@ import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
+import formatDate from './formatDate';
 
 const db = await database;
 
@@ -72,7 +73,7 @@ const dateEl = (date?: Date): HTMLElement | string => {
     (daysOffset ? `${daysOffset}d ` : "") +
     date.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit"}),
     // I like Swedish-style dates (YYYY-MM-DD):
-    {title: date.toLocaleString("sv")}
+    {title: formatDate(date)}
   );
 }
 

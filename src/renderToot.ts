@@ -5,6 +5,7 @@ import emojify, { deepEmojify } from "./emojify";
 import { linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
 import type { Observation } from "./Observation";
 import sanitize from "./sanitize";
+import formatDate from "./formatDate";
 
 export 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
@@ -45,7 +46,7 @@ function renderToot(
       toggleClosed && H("button.close-open", {"@click": toggleClosed}),
       headerLinks("status"),
       H("span.visibility", `[${toot.visibility}]`),
-      H("span.toot-created", new Date(toot.created_at).toLocaleString("sv")),
+      H("span.toot-created", formatDate(toot.created_at)),
       H("img.toot-author-avatar", {
         src: account.avatar_static,
       }),
@@ -105,7 +106,7 @@ function renderToot(
           H("div.poll-votes-count", "total votes: ", poll.votes_count.toString()),
           H("div.poll-expiry",
             el => el.classList.add(poll.expired ? "poll-expired" : "poll-ongoing"),
-            poll.expires_at && new Date(poll.expires_at).toLocaleString("sv"),
+            poll.expires_at && formatDate(poll.expires_at),
           ),
         ),
 

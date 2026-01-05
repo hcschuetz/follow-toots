@@ -8,6 +8,7 @@ import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
 import renderToot, { type LinkConfig } from './renderToot';
+import formatDate from './formatDate';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -225,10 +226,10 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
       )
     ),
     H("span.tree-head-date",
-      overview.rootCreatedAt?.toLocaleString("sv"),
+      formatDate(overview.rootCreatedAt),
       "\u2002–\u2002",
-      overview.lastCreatedAt?.toLocaleString("sv"),
-      `\u2003last fetched ${overview.lastRetrievalDate?.toLocaleString("sv") ?? "-"}`
+      formatDate(overview.lastCreatedAt),
+      `\u2003last fetched ${formatDate(overview.lastRetrievalDate)}`
     ),
     H("span.tree-head-statistics",
       H("span", `${1 + (overview.nDescendants ?? 0)} toot(s)`),
