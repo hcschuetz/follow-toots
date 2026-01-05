@@ -8,7 +8,6 @@ export default (urlString: string): [string, string] | undefined => {
     case "https://phanpy.social": {
       // https://phanpy.social/#/instan.ce/s/12345
       const hashPath = url.hash.split("/");
-      console.log(url.pathname, url.search, hashPath)
       return confirmURL(
         urlString,
         url.pathname === "/" && url.search === ""
