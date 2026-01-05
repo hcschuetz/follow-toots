@@ -9,6 +9,7 @@ import url2key from './url2key';
 import emojify from './emojify';
 import renderToot, { type LinkConfig } from './renderToot';
 import formatDate from './formatDate';
+import type { Status } from './mastodon-entities';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -79,6 +80,18 @@ const appEl = document.querySelector("#app")!;
 const ancestorsEl = document.querySelector("#ancestors")!;
 const descendantsEl = document.querySelector("#descendants")!;
 
+/**
+ * An id for the current "toot version"
+ * 
+ * ...consisting of the toot id and (if present) the edit date.
+ * 
+ * Used to re-open a closed toot after an edit.
+ * @param toot 
+ * @returns 
+ */
+const versionId = (toot: Status): string =>
+  toot.edited_at ? `${toot.id}@${toot.edited_at}` : toot.id;
+
 async function openAll() {
   const overview = await db.get("treeOverview", key);
   if (!overview) return;
@@ -93,7 +106,7 @@ async function closeAll() {
   if (!details) return;
   const {root, descendants} = details;
   const {closedIds} = overview;
-  [root, ...descendants].forEach(toot => closedIds.add(toot.id));
+  [root, ...descendants].forEach(toot => closedIds.add(versionId(toot)));
   updateClosed(overview);
 }
 
@@ -162,8 +175,8 @@ function renderTootTree(details: DetailEntry): void {
       renderToot(
         toot, instance,
         observeLinkConfig,
-        toggleClosed(toot.id, key),
-        observeClosed(toot.id),
+        toggleClosed(versionId(toot), key),
+        observeClosed(versionId(toot)),
         threadPosMarker,
       ),
       H("ul.tree-node",
@@ -184,7 +197,7 @@ async function renderTootList(details: DetailEntry, restricted: boolean) {
   const [instance] = key.split("/", 1); // a bit hacky
   const displayedDescendants =
     restricted
-    ? descendants.filter(toot => !closedIdsSignal.value?.has(toot.id))
+    ? descendants.filter(toot => !closedIdsSignal.value?.has(versionId(toot)))
     : descendants;
   descendantsEl.replaceChildren(
     H("ul.toot-list",
@@ -193,8 +206,8 @@ async function renderTootList(details: DetailEntry, restricted: boolean) {
           renderToot(
             toot, instance,
             observeLinkConfig,
-            toggleClosed(toot.id, key),
-            observeClosed(toot.id),
+            toggleClosed(versionId(toot), key),
+            observeClosed(versionId(toot)),
           ),
         )
       ),
