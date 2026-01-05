@@ -476,6 +476,10 @@ code {
   justify-self: end;
 }
 
+.line-through {
+  text-decoration: line-through;
+}
+
 .warn {
   background-color: #ff0;
   margin-inline: -3px;
