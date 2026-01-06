@@ -242,8 +242,6 @@ body.tree {
       ul.attachments {
         padding: 0;
         > li.attachment {
-          border-top: 2px solid black;
-          padding-block: 1em;
           display: flex;
           flex-direction: column;
           align-items: start;
@@ -253,6 +251,7 @@ body.tree {
           }
           img.preview {
             max-width: 100%;
+            border: 1px solid #888;
           }
         }
       }
