@@ -60,7 +60,6 @@ function extendH<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
 
 export
 function setupH<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
-  [...el.attributes].forEach(({name}) => name !== "id" && el.removeAttribute(name));
   el.replaceChildren();
   extendH(el, ...rest);
 }
