@@ -67,10 +67,12 @@ function renderToot(
         () => {
           const attachments =
             H("ul.attachments", toot.media_attachments.map(att =>
+              // (console.dir(att),true) &&
               H("li.attachment",
                 H("img.preview", {
                   src: att.preview_url,
-                  title: att.description ?? undefined,
+                  alt: att.description ?? "",
+                  title: att.description ?? "",
                 }),
                 att.url && A_blank("media-link", att.url, `→ ${att.type}`),
               ),
