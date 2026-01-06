@@ -116,16 +116,63 @@ function renderToot(
 
         card &&
         H("div.card",
-          A_blank("card-title", card.url, card.title),
-          card.description && H("div.card-description", card.description),
           // If a card provides both html and an image, which one should be
           // displayed?  (Or leave the choice to the user?)
           card.image ? H("img.card-image", {
             src: card.image,
-            alt: card.image_description ?? undefined,
+            alt: card.image_description ?? "",
+            title: card.image_description ?? "",
+            width: card.width ?? undefined,
+            height: card.height ?? undefined,
           }) :
-          card.html ? H("div.card-html", {innerHTML: card.html}) :
+          // For now, don't trust the received HTML.
+          // Maybe display a sanitized version later.
+          // (In practice it's most of the time an iframe embedding a
+          // youtube video.  It might be easier to build the HTML
+          // than to sanitize it.)
+          // card.html ? H("div.card-html", {innerHTML: card.html}) :
           undefined,
+          function*() {
+            if (card.provider_name) {
+              yield card.provider_url
+                ? A_blank("card-provider", card.provider_url, card.provider_name)
+                : card.provider_name;
+            }
+            yield A_blank("card-title", card.url, card.title);
+            const authors = (card.authors ?? []).filter(a => a.name);
+            switch (authors.length) {
+              case 0: {
+                if (card.author_name) {
+                  yield H("span",
+                    "by ",
+                    card.author_url
+                    ? A_blank("card-author", card.author_url, card.author_name)
+                    : card.author_name
+                  );
+                }
+                break;
+              }
+              case 1: {
+                const {name, url} = authors[0];
+                yield H("span", "by ", A_blank("card-author", url, name));
+                break;
+              }
+              default: {
+                yield "by";
+                yield H("ul.card-authors", function*() {
+                  for (const {name, url} of authors) {
+                    yield H("li", A_blank("card-author", url, name));
+                    // TODO display the card-author's account?
+                  }
+                });
+                break;
+              }
+            }
+            card.description && H("div.card-description", card.description);
+
+            // Just to see what's in a card:
+            console.dir(card);
+          },
         ),
 
         // TODO more status features (quotes, ...)
