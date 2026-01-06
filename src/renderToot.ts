@@ -1,8 +1,8 @@
 import A_blank from "./A_blank";
-import H from "./H";
+import H, { setupH } from "./H";
 import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
-import { linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
+import { linkableFeatures, linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
 import type { Observation } from "./Observation";
 import sanitize from "./sanitize";
 import formatDate from "./formatDate";
@@ -25,16 +25,17 @@ function renderToot(
   const headerLinks = (feature: LinkableFeature) =>
     H("span.contents", el => {
       observeLinkConfig(linkConfig => {
-        el.replaceChildren();
-        const obj = linkConfig?.[feature] ?? {};
-        for (const k in obj) if (obj[k]) {
-          el.append(
-            A_blank("icon-link",
-              linkConfigConfig[k].urlFunctions[feature](instance, toot),
-              H("img.link-icon", {src: linkConfigConfig[k].icon}),
-            )
-          )
-        }
+        setupH(el, function*() {
+          const obj = linkConfig?.[feature] ?? {};
+          for (const k in obj) if (obj[k]) {
+            const frontend = linkConfigConfig[k];
+            yield A_blank("icon-link",
+              frontend.urlFunctions[feature](instance, toot),
+              H("img.link-icon", {src: frontend.icon}),
+              {title: `Go to ${linkableFeatures[feature].toLowerCase()} on ${frontend.name}`}
+            );
+          }
+        })
       });
     });
 
