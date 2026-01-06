@@ -1,5 +1,5 @@
 import { effect, signal } from "@preact/signals-core";
-import H, { setupH } from "./H";
+import H, { reRenderInto } from "./H";
 import mapObject from "./mapObject";
 import database from "./database";
 import {
@@ -47,7 +47,7 @@ const linkConfigurationSigs =
   });
 }
 
-setupH(configLinksEl!,
+reRenderInto(configLinksEl!,
   H("div.bold.client-name", "Frontend"),
   ...Object.values(linkableFeatures).map(ft => H("div.bold", ft)),
 

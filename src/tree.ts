@@ -1,7 +1,7 @@
 import { effect, signal } from '@preact/signals-core';
 
 import { deleteTree, fetchTree, updateClosed } from './actions';
-import H, { setupH } from './H';
+import H, { reRenderInto } from './H';
 import database, { type DetailEntry, type OverviewEntry, type SubTree } from './database';
 import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
@@ -193,7 +193,7 @@ function renderTootTree(details: DetailEntry): void {
     }
   }
 
-  setupH(descendantsEl, descend(tootTree));
+  reRenderInto(descendantsEl, descend(tootTree));
 }
 
 function renderTootList(details: DetailEntry, restricted: boolean) {
@@ -203,7 +203,7 @@ function renderTootList(details: DetailEntry, restricted: boolean) {
     restricted
     ? descendants.filter(toot => !closedIdsSignal.value?.has(versionId(toot)))
     : descendants;
-  setupH(descendantsEl,
+  reRenderInto(descendantsEl,
     H("ul.toot-list",
       [root, ...displayedDescendants].map(toot =>
         H("li",
@@ -232,7 +232,7 @@ const explainMismatch =
 
 function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
   const {rootAuthor, rootAccountEmojis} = overview;
-  setupH(appEl,
+  reRenderInto(appEl,
     H("div.tree-head-author",
       H("img.tree-head-avatar", { src: overview.rootAuthorAvatar }),
       H("span.tree-head-name",
@@ -296,7 +296,7 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
 }
 
 function renderUnfollowed(instance: string, id: string) {
-  setupH(appEl,
+  reRenderInto(appEl,
     H("div", `You are currently not following toot ${id} from ${instance}. `),
     H("div",
       H("button", {
@@ -318,7 +318,7 @@ function renderAncestors(details: DetailEntry) {
   }
   const rootAncestor = ancestors[0];
   const [instance] = key.split("/", 1); // a bit hacky
-  setupH(ancestorsEl,
+  reRenderInto(ancestorsEl,
     H("div.root-ancestor",
       renderToot(rootAncestor, instance, observeLinkConfig),
       H("div.more-ancestors",

@@ -1,5 +1,5 @@
 import database from "./database";
-import H, { setupH } from "./H";
+import H, { reRenderInto } from "./H";
 
 const accessTokenGridEl = document.querySelector<HTMLElement>("#access-tokens")!;
 
@@ -31,7 +31,7 @@ async function updated() {
 async function showTokens() {
   const data = await db.getAll("accessTokens");
   removeAllButton.disabled = data.length === 0,
-  setupH(accessTokenGridEl!,
+  reRenderInto(accessTokenGridEl!,
     H("span.bold", "Instance"),
     H("span.bold", "Token"),
     removeAllButton,

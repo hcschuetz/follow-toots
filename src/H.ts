@@ -25,8 +25,14 @@ type HParam<T extends HTMLElement = HTMLElement> =
 | Iterable<HParam<T>>
 | ((el: T) => HParam<T>);
 
+/**
+ * Like `H`, but adding properties/attributes/children to an existing
+ * `HTMLElement`
+ *
+ * Returns the given element.
+ */
 export
-function extendH<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
+function renderInto<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
   for (const param of rest) {
     if (param == null) {
       // do nothing
@@ -39,9 +45,9 @@ function extendH<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
     } else if (param instanceof Attr) {
       el.setAttribute(param.name, param.value);
     } else if (typeof param === "function") {
-      extendH(el, param(el));
+      renderInto(el, param(el));
     } else if (isIterable(param)) {
-      extendH(el, ...param);
+      renderInto(el, ...param);
     } else {
       if (param.constructor !== Object) {
         console.warn(`Properties for ${el} not a plain object: ${param}`);
@@ -58,10 +64,17 @@ function extendH<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
   return el;
 }
 
+/**
+ * Like `renderInto`, but removes existing children from the given `HTMLElement`
+ * before rendering.  This avoids an accumulation of children along multiple
+ * invocations of this function.
+ *
+ * Returns the given element.
+ */
 export
-function setupH<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
+function reRenderInto<E extends HTMLElement>(el: E, ...rest: HParam<E>[]) {
   el.replaceChildren();
-  extendH(el, ...rest);
+  return renderInto(el, ...rest);
 }
 
 /**
@@ -96,7 +109,7 @@ function H<T extends keyof HTMLElementTagNameMap>(
   for (const cls of classes) {
     el.classList.add(cls);
   }
-  return extendH(el, ...rest);
+  return renderInto(el, ...rest);
 }
 
 /**

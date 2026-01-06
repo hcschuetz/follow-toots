@@ -1,5 +1,5 @@
 import { deleteTrees as deleteAll, deleteTree, fetchTree, reloadTrees as reloadAll } from './actions';
-import H, { setupH } from './H';
+import H, { reRenderInto } from './H';
 import database from './database';
 import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
@@ -87,7 +87,7 @@ async function show() {
     (b.lastCreatedAt?.getTime() ?? Number.MAX_VALUE)
   );
 
-  setupH(theGrid,
+  reRenderInto(theGrid,
     H("div.bold", "Root Author"),
     H("div.bold", "Toots"),
     H("div.bold", "Open"),

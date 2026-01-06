@@ -1,5 +1,5 @@
 import A_blank from "./A_blank";
-import H, { setupH } from "./H";
+import H, { reRenderInto } from "./H";
 import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
 import { linkableFeatures, linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
@@ -25,7 +25,7 @@ function renderToot(
   const headerLinks = (feature: LinkableFeature) =>
     H("span.contents", el => {
       observeLinkConfig(linkConfig => {
-        setupH(el, function*() {
+        reRenderInto(el, function*() {
           const obj = linkConfig?.[feature] ?? {};
           for (const k in obj) if (obj[k]) {
             const frontend = linkConfigConfig[k];
