@@ -171,7 +171,7 @@ function renderToot(
             card.description && H("div.card-description", card.description);
 
             // Just to see what's in a card:
-            console.dir(card);
+            // console.dir(card);
           },
         ),
 
