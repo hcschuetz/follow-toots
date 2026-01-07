@@ -126,6 +126,31 @@ body.tree {
       }
     }
   }
+
+  /*
+  The subtree-collapsing summary should not consume the full width.
+  So I made it inline.  But then I had to re-create the rotating triangle.
+  */
+  details.replies {
+    width: fit-content;
+    > summary {
+      display: inline;
+      /* display: none; */
+      font-size: 90%;
+      cursor: pointer;
+      &:focus {
+        outline: 2px solid blue;
+        color: blue;
+      }
+      &::before {
+        content: "►\2003";
+      }
+    }
+  }
+  details.replies[open] > summary::before {
+    content: "▼\2003";
+  }
+
   ul.toot-list {
     margin: 0;
     padding: 0;
