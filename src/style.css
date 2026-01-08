@@ -154,7 +154,7 @@ body.tree {
   ul.toot-list {
     margin: 0;
     padding: 0;
-    > li {
+    > .contents > li {
       margin: 0;
       &::marker {
         content: "";

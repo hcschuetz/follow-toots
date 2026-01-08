@@ -1,4 +1,4 @@
-import { effect, signal } from '@preact/signals-core';
+import { effect, Signal, signal } from '@preact/signals-core';
 
 import { deleteTree, fetchTree, updateClosed } from './actions';
 import H, { reRenderInto } from './H';
@@ -70,7 +70,7 @@ setupNotifications<Notifications>("followToots", {
 
 const db = await database;
 
-const closedIdsSignal = signal<Set<string> | undefined>();
+const closedIdsSignal = signal<Set<string> | undefined>(undefined, {name: "closedIds"});
 
 async function setClosedIdsSignal() {
   closedIdsSignal.value = (await db.get("treeOverview", key))?.closedIds;
@@ -110,25 +110,12 @@ const toggleClosed = (tootId: string, rootKey: string) => async () => {
   updateClosed(overview);
 };
 
-const observeClosed = (id: string) => (update: (closed: boolean) => unknown) => {
-  // TODO Should we collect the dispose functions and invoke them, for example
-  // in setClosedIdsSignal()?
-  effect(() => {
-    update(closedIdsSignal.value?.has(id) ?? false);
-  });
-};
-
-const linkConfigurationsSig = signal<LinkConfig>();
+const linkConfigSig =
+  signal<LinkConfig | undefined>(undefined, {name: "linkConfig"});
 
 async function readLinkConfig() {
-  linkConfigurationsSig.value = (await db.get("config", "links")).value;
+  linkConfigSig.value = (await db.get("config", "links")).value;
 }
-
-const observeLinkConfig = (update: (config?: LinkConfig) => unknown) => {
-  effect(() => {
-    update(linkConfigurationsSig.value)
-  })
-};
 
 new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 
@@ -148,7 +135,7 @@ function renderChildrenMismatch(diff: number): HTMLElement | void {
   }
 }
 
-function renderTootTree(details: DetailEntry): void {
+function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals): void {
   const {key, tootTree} = details;
 
   function* descend({toot, children}: SubTree, prevThreadPos = 0):
@@ -166,9 +153,9 @@ function renderTootTree(details: DetailEntry): void {
     const [instance] = key.split("/", 1); // a bit hacky
     yield renderToot(
       toot, instance,
-      observeLinkConfig,
+      linkConfigSig,
       toggleClosed(versionId(toot), key),
-      observeClosed(versionId(toot)),
+      closedIdSignals.get(versionId(toot)),
       threadPosMarker,
     );
     if (children.length) {
@@ -176,19 +163,36 @@ function renderTootTree(details: DetailEntry): void {
         children.map(subtree => H("li", descend(subtree))),
         renderChildrenMismatch(children.length + (selfReply ? 1 : 0) - toot.replies_count),
       );
-      const nTotalReplies = countDescendants(children, false);
-      const nReReplies = nTotalReplies - children.length;
-      const nOpen = countDescendants(children, true);
       yield (
         // nTotalReplies === 1 ? ul :
         H("details.replies", {open: true},
           H("summary",
-            {"@keydown": navigate},`${
-              nTotalReplies} replies (${
-              children.length} direct, ${
-              nReReplies} indirect), ${
-              nOpen} open${
-              selfReply ? "; thread continued" : ""}`,
+            {"@keydown": navigate},
+            el => {
+              effect(() => {
+                function countDescendants(children: SubTree[], openOnly: boolean) {
+                  const recur = (children: SubTree[]): number =>
+                    children.reduce(
+                      (acc, {toot, children}) =>
+                        acc +
+                        Number(!(openOnly && closedIdSignals.get(versionId(toot))?.value)) +
+                        recur(children),
+                      0
+                    );
+                  return recur(children);
+                }
+
+                const nTotalReplies = countDescendants(children, false);
+                const nReReplies = nTotalReplies - children.length;
+                const nOpen = countDescendants(children, true);
+                el.textContent = `${
+                  nTotalReplies} replies (${
+                  children.length} direct, ${
+                  nReReplies} indirect), ${
+                  nOpen} open${
+                  selfReply ? "; thread continued" : ""}`;
+              });
+            }
           ),
           ul,
         )
@@ -269,32 +273,36 @@ function navigate(ev: KeyboardEvent) {
   }
 }
 
-const countDescendants = (children: SubTree[], closedOnly: boolean): number =>
-  children.reduce(
-    (acc, {toot, children}) =>
-      acc +
-      (closedOnly ? Number(!closedIdsSignal.value?.has(versionId(toot))) : 1) +
-      countDescendants(children, closedOnly),
-    0
-  );
-
-function renderTootList(details: DetailEntry, restricted: boolean) {
+function renderTootList(
+  details: DetailEntry,
+  closedIdSignals: ClosedIdSignals,
+  restricted: boolean,
+) {
   const {key, root, descendants} = details;
   const [instance] = key.split("/", 1); // a bit hacky
-  const displayedDescendants =
-    restricted
-    ? descendants.filter(toot => !closedIdsSignal.value?.has(versionId(toot)))
-    : descendants;
   reRenderInto(descendantsEl,
     H("ul.toot-list",
-      [root, ...displayedDescendants].map(toot =>
-        H("li",
-          renderToot(
-            toot, instance,
-            observeLinkConfig,
-            toggleClosed(versionId(toot), key),
-            observeClosed(versionId(toot)),
-          ),
+      [root, ...descendants].map((toot, i) =>
+        H("div.contents",
+          el => {
+            effect(() => {
+              el.replaceChildren(
+                ...(
+                  i > 0 && restricted &&
+                  closedIdSignals.get(versionId(toot))?.value
+                ) ? [] : [
+                  H("li",
+                    renderToot(
+                      toot, instance,
+                      linkConfigSig,
+                      toggleClosed(versionId(toot), key),
+                      closedIdSignals.get(versionId(toot)),
+                    ),
+                  )
+                ]
+              )
+            })
+          }
         )
       ),
     ),
@@ -303,7 +311,7 @@ function renderTootList(details: DetailEntry, restricted: boolean) {
 
 const displayModes = ["hierarchical", "chronological", "root + open"] as const;
 type DisplayMode = (typeof displayModes)[number]
-const displayModeSig = signal<DisplayMode>("hierarchical");
+const displayModeSig = signal<DisplayMode>("hierarchical", {name: "displayMode"});
 
 const explainMismatch =
 `Possible reasons for a mismatch between expected and actual number of toots:
@@ -402,7 +410,7 @@ function renderAncestors(details: DetailEntry) {
   const [instance] = key.split("/", 1); // a bit hacky
   reRenderInto(ancestorsEl,
     H("div.root-ancestor",
-      renderToot(rootAncestor, instance, observeLinkConfig),
+      renderToot(rootAncestor, instance, linkConfigSig),
       H("div.more-ancestors",
         ancestors.length === 1 ? "↓" :
         `↓\u2003${ancestors.length - 1} more ancestor toot(s)`
@@ -411,20 +419,32 @@ function renderAncestors(details: DetailEntry) {
   )
 }
 
+type ClosedIdSignals = Map<string, Signal<boolean | undefined>>;
+
 async function renderDetails(details: DetailEntry) {
+  const closedIdSignals: ClosedIdSignals =
+    new Map([details.root, ...details.descendants].map(toot =>
+      [versionId(toot), signal<boolean>()]
+    ));
+  effect(() => {
+    for (const [id, sig] of closedIdSignals) {
+      sig.value = closedIdsSignal.value?.has(id);
+    }
+  });
+
   renderAncestors(details);
   effect(() => {
     switch (displayModeSig.value) {
       case "hierarchical": {
-        renderTootTree(details);
+        renderTootTree(details, closedIdSignals);
         break;
       }
       case "chronological": {
-        renderTootList(details, false);
+        renderTootList(details, closedIdSignals, false);
         break;
       }
       case "root + open": {
-        renderTootList(details, true);
+        renderTootList(details, closedIdSignals, true);
         break;
       }
       default: {

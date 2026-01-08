@@ -3,9 +3,9 @@ import H, { reRenderInto } from "./H";
 import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
 import { linkableFeatures, linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
-import type { Observation } from "./Observation";
 import sanitize from "./sanitize";
 import formatDate from "./formatDate";
+import { effect, Signal } from "@preact/signals-core";
 
 export 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
@@ -14,9 +14,9 @@ export default
 function renderToot(
   toot: Status,
   instance: string,
-  observeLinkConfig: Observation<LinkConfig | undefined>,
+  linkConfigSig: Signal<LinkConfig | undefined>,
   toggleClosed?: () => unknown,
-  observeClosed?: Observation<boolean>,
+  closedSig?: Signal<boolean | undefined>,
   prefix?: HTMLElement | string,
 ): HTMLElement {
 
@@ -24,9 +24,9 @@ function renderToot(
 
   const headerLinks = (feature: LinkableFeature) =>
     H("span.contents", el => {
-      observeLinkConfig(linkConfig => {
+      effect(() => {
         reRenderInto(el, function*() {
-          const obj = linkConfig?.[feature] ?? {};
+          const obj = linkConfigSig.value?.[feature] ?? {};
           for (const k in obj) if (obj[k]) {
             const frontend = linkConfigConfig[k];
             yield A_blank("icon-link",
@@ -35,7 +35,7 @@ function renderToot(
               {title: `Go to ${linkableFeatures[feature].toLowerCase()} on ${frontend.name}`}
             );
           }
-        })
+        });
       });
     });
 
@@ -67,7 +67,6 @@ function renderToot(
         () => {
           const attachments =
             H("ul.attachments", toot.media_attachments.map(att =>
-              // (console.dir(att),true) &&
               H("li.attachment",
                 H("img.preview", {
                   src: att.preview_url,
@@ -171,9 +170,6 @@ function renderToot(
               }
             }
             card.description && H("div.card-description", card.description);
-
-            // Just to see what's in a card:
-            // console.dir(card);
           },
         ),
 
@@ -186,8 +182,9 @@ function renderToot(
       }
 
       body.classList.add("toot-full-body");
-      if (observeClosed) {
-        observeClosed(closed => {
+      if (closedSig) {
+        effect(() => {
+          const closed = Boolean(closedSig.value);
           closeOpenButton!.textContent = closed ?  "+" : "−";
           closeOpenButton!.title = closed ? "Open toot" : "Close toot"; 
           body.hidden = closed;
