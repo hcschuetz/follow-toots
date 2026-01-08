@@ -4,6 +4,7 @@ import type { Context, Status } from "./mastodon-entities";
 import type { Notifications } from "./Notifications";
 import sanitize from "./sanitize";
 import setupNotifications from "./setupNotifications";
+import versionId from "./versionId";
 
 const db = await database;
 
@@ -129,8 +130,8 @@ const count = <T>(values: T[], pred: (item: T) => boolean) =>
   values.reduce((acc, item) => acc + Number(pred(item)), 0);
 
 const countOpen = (root: Status, descendants: Status[], closedIds: Set<string>): number =>
-  Number(!closedIds.has(root.id)) +
-  count(descendants, toot => !closedIds.has(toot.id));
+  Number(!closedIds.has(versionId(root))) +
+  count(descendants, toot => !closedIds.has(versionId(toot)));
 
 function toTootTree(root: Status, descendants: Status[]): SubTree {
   // Notice: A recursive datastructure is built by a non-recursive algorithm.
