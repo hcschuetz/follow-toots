@@ -9,7 +9,7 @@ import url2key from './url2key';
 import emojify from './emojify';
 import renderToot, { type LinkConfig } from './renderToot';
 import formatDate from './formatDate';
-import type { Status } from './mastodon-entities';
+import versionId from './versionId';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -79,18 +79,6 @@ async function setClosedIdsSignal() {
 const appEl = document.querySelector<HTMLElement>("#app")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
-
-/**
- * An id for the current "toot version"
- * 
- * ...consisting of the toot id and (if present) the edit date.
- * 
- * Used to re-open a closed toot after an edit.
- * @param toot 
- * @returns 
- */
-const versionId = (toot: Status): string =>
-  toot.edited_at ? `${toot.id}@${toot.edited_at}` : toot.id;
 
 async function openAll() {
   const overview = await db.get("treeOverview", key);
