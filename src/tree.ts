@@ -136,7 +136,18 @@ function renderChildrenMismatch(diff: number): HTMLElement | void {
 }
 
 function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals): void {
-  const {key, tootTree} = details;
+  const {key, root, descendants} = details;
+
+  // A recursive datastructure is built without recursion:
+  // - Create subtree nodes for each toot and index them by an auxiliary map.
+  // - Then add reverse pointers to the `in_reply_to_id` pointers of toots.
+  const id2subTree = new Map([root, ...descendants].map(toot =>
+    [toot.id, {toot, children: [] as SubTree[]}]
+  ));
+  for (const toot of descendants) {
+    id2subTree.get(toot.in_reply_to_id!)?.children.push(id2subTree.get(toot.id)!);
+  }
+  const tootTree = id2subTree.get(root.id)!;
 
   function* descend({toot, children}: SubTree, prevThreadPos = 0):
     Generator<HTMLElement, void, unknown>

@@ -30,14 +30,6 @@ export interface DetailEntry {
   root: Status;
   ancestors: Status[];
   descendants: Status[];
-  /**
-   * The contents of `.root` and `.descendants` as a hierarchy.
-   * 
-   * Storing the toot data twice in the database might look like a waste of
-   * memory, but the structured-clone algorithm actually just *references*
-   * each status twice.
-   */
-  tootTree: SubTree;
 }
 
 interface Schema extends DBSchema {

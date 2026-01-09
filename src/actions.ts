@@ -107,12 +107,7 @@ async function fetchTree(instance: string, id: string) {
         nExpectedDescendants: totalRepliesCount(root, descendants),
       }));
       const details = tx.objectStore("treeDetails");
-      await details.put({
-        key, root,
-        ancestors: context.ancestors,
-        descendants,
-        tootTree: toTootTree(root, descendants),
-      });
+      await details.put({key, root, ...context});
     }
     notify.updatedTree(key);
   } catch (caught) {
@@ -132,17 +127,6 @@ const count = <T>(values: T[], pred: (item: T) => boolean) =>
 const countOpen = (root: Status, descendants: Status[], closedIds: Set<string>): number =>
   Number(!closedIds.has(versionId(root))) +
   count(descendants, toot => !closedIds.has(versionId(toot)));
-
-function toTootTree(root: Status, descendants: Status[]): SubTree {
-  // Notice: A recursive datastructure is built by a non-recursive algorithm.
-  const id2subTree = Object.fromEntries([root, ...descendants].map(toot =>
-    [toot.id, {toot, children: [] as SubTree[]}]
-  ));
-  for (const toot of descendants) {
-    id2subTree[toot.in_reply_to_id!]?.children.push(id2subTree[toot.id]);
-  }
-  return id2subTree[root.id];
-}
 
 const totalRepliesCount = (root: Status, descendants: Status[]): number =>
   descendants.reduce(
