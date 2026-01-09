@@ -132,7 +132,6 @@ body.tree {
   So I made it inline.  But then I had to re-create the rotating triangle.
   */
   details.replies {
-    width: fit-content;
     > summary {
       display: inline;
       /* display: none; */
