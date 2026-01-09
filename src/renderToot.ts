@@ -15,8 +15,8 @@ function renderToot(
   toot: Status,
   instance: string,
   linkConfigSig: Signal<LinkConfig | undefined>,
-  toggleClosed?: () => unknown,
-  closedSig?: Signal<boolean | undefined>,
+  toggleClosed: () => unknown,
+  closedSig: Signal<boolean | undefined>,
   prefix?: HTMLElement | string,
 ): HTMLElement {
 
@@ -43,13 +43,13 @@ function renderToot(
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
     el => {
       effect(() => {
-        el.classList.toggle("closed", Boolean(!closedSig || closedSig.value));
+        el.classList.toggle("closed", Boolean(closedSig.value));
       })
     },
     H("div.toot-head",
       prefix,
       closeOpenButton =
-      toggleClosed && H("button.close-open", {"@click": toggleClosed}),
+      H("button.close-open", {"@click": toggleClosed}),
       headerLinks("status"),
       H("span.visibility", toot.visibility),
       toot.edited_at ? [
@@ -187,17 +187,12 @@ function renderToot(
       }
 
       body.classList.add("toot-full-body");
-      if (closedSig) {
-        effect(() => {
-          const closed = Boolean(closedSig.value);
-          closeOpenButton!.textContent = closed ?  "+" : "−";
-          closeOpenButton!.title = closed ? "Open toot" : "Close toot"; 
-          body.hidden = closed;
-        });
-      } else {
-        // toot is an ancestor and (at least for now) always closed:
-        body.hidden = true;
-      }
+      effect(() => {
+        const closed = Boolean(closedSig.value);
+        closeOpenButton!.textContent = closed ?  "+" : "−";
+        closeOpenButton!.title = closed ? "Open toot" : "Close toot"; 
+        body.hidden = closed;
+      });
       return body;
     },
   );

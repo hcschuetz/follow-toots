@@ -17,9 +17,8 @@ interface OverviewEntry {
   teaser?: string;
   rootCreatedAt?: Date;
   lastCreatedAt?: Date;
-  nDescendants?: number;
+  nToots?: number;
   nOpen?: number;
-  nExpectedDescendants?: number;
 };
 
 export

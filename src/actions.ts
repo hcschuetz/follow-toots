@@ -1,5 +1,5 @@
 import asgn from "./asgn";
-import database, { type OverviewEntry, type SubTree } from "./database";
+import database, { type OverviewEntry } from "./database";
 import type { Context, Status } from "./mastodon-entities";
 import type { Notifications } from "./Notifications";
 import sanitize from "./sanitize";
@@ -80,7 +80,9 @@ async function fetchTree(instance: string, id: string) {
     }
     const context: Context = await contextResponse.json();
 
-    const descendants = context.descendants.sort((a, b) =>
+    const {ancestors, descendants} = context;
+
+    descendants.sort((a, b) =>
       a.created_at < b.created_at ? -1 :
       a.created_at > b.created_at ? +1 :
       0
@@ -95,8 +97,8 @@ async function fetchTree(instance: string, id: string) {
       await overview.put(asgn(o, {
         key,
         lastRetrievalDate: new Date(),
-        nDescendants: descendants.length,
-        nOpen: countOpen(root, descendants, o.closedIds),
+        nToots: ancestors.length + 1 + descendants.length,
+        nOpen: countOpen([...ancestors, root, ...descendants], o.closedIds),
         rootCreatedAt: new Date(root.created_at),
         lastCreatedAt: new Date((descendants.at(-1) ?? root).created_at),
         rootAuthor: root.account.display_name,
@@ -104,7 +106,6 @@ async function fetchTree(instance: string, id: string) {
         rootAccountEmojis: root.account.emojis,
         rootAcct: root.account.acct,
         teaser,
-        nExpectedDescendants: totalRepliesCount(root, descendants),
       }));
       const details = tx.objectStore("treeDetails");
       await details.put({key, root, ...context});
@@ -124,15 +125,8 @@ function html2text(html: string) {
 const count = <T>(values: T[], pred: (item: T) => boolean) =>
   values.reduce((acc, item) => acc + Number(pred(item)), 0);
 
-const countOpen = (root: Status, descendants: Status[], closedIds: Set<string>): number =>
-  Number(!closedIds.has(versionId(root))) +
-  count(descendants, toot => !closedIds.has(versionId(toot)));
-
-const totalRepliesCount = (root: Status, descendants: Status[]): number =>
-  descendants.reduce(
-    (acc: number, toot) => acc + toot.replies_count,
-    root.replies_count
-  );
+const countOpen = (toots: Status[], closedIds: Set<string>): number =>
+  count(toots, toot => !closedIds.has(versionId(toot)));
 
 export
 async function updateClosed(overview: OverviewEntry) {
@@ -142,9 +136,10 @@ async function updateClosed(overview: OverviewEntry) {
   // and details in memory.
   const details = await tx.objectStore("treeDetails").get(overview.key);
   if (!details) return;
+  const {root, ancestors, descendants} = details;
   await tx.objectStore("treeOverview").put({
     ...overview,
-    nOpen: countOpen(details.root, details.descendants, overview.closedIds),
+    nOpen: countOpen([...ancestors, root, ...descendants], overview.closedIds),
   });
   notify.updatedTreeOverview(overview.key);
 }

@@ -92,9 +92,9 @@ async function closeAll() {
   if (!overview) return;
   const details = await db.get("treeDetails", key);
   if (!details) return;
-  const {root, descendants} = details;
+  const {ancestors, root, descendants} = details;
   const {closedIds} = overview;
-  [root, ...descendants].forEach(toot => closedIds.add(versionId(toot)));
+  [...ancestors, root, ...descendants].forEach(toot => closedIds.add(versionId(toot)));
   updateClosed(overview);
 }
 
@@ -166,7 +166,7 @@ function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals):
       toot, instance,
       linkConfigSig,
       toggleClosed(versionId(toot), key),
-      closedIdSignals.get(versionId(toot)),
+      closedIdSignals.get(versionId(toot))!,
       threadPosMarker,
     );
     if (children.length) {
@@ -298,7 +298,7 @@ function renderTootList(
             toot, instance,
             linkConfigSig,
             toggleClosed(versionId(toot), key),
-            closedIdSignals.get(versionId(toot)),
+            closedIdSignals.get(versionId(toot))!,
           ),
         ),
       ),
@@ -309,13 +309,6 @@ function renderTootList(
 const displayModes = ["hierarchical", "chronological"] as const;
 type DisplayMode = (typeof displayModes)[number]
 const displayModeSig = signal<DisplayMode>("hierarchical", {name: "displayMode"});
-
-const explainMismatch =
-`Possible reasons for a mismatch between expected and actual number of toots:
-- Without authentication Mastodon reports at most 60 descendants.
-- Some toots might be non-public.
-- Replies or reply counts might not yet be propagated to your instance.
-- ...`;
 
 function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
   const {rootAuthor, rootAccountEmojis} = overview;
@@ -336,12 +329,7 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
       `\u2003last fetched ${formatDate(overview.lastRetrievalDate)}`
     ),
     H("span.tree-head-statistics",
-      H("span", `${1 + (overview.nDescendants ?? 0)} toot(s)`),
-      overview.nDescendants !== overview.nExpectedDescendants
-        ? H("span.warn",
-          {title: explainMismatch},
-          `${(overview.nExpectedDescendants ?? 0) + 1} expected`
-        ) : "",
+      H("span", `${overview.nToots ?? "??"} toot(s)`),
       H("span", `${overview.nOpen ?? "??"} open`)
     ),
     H("div.tree-head-buttons",
@@ -411,30 +399,23 @@ function renderUnfollowed(instance: string, id: string) {
   descendantsEl.replaceChildren(/* with nothing */);
 }
 
-function renderAncestors(details: DetailEntry) {
-  const ancestors = details.ancestors;
-  if (ancestors.length === 0) {
-    ancestorsEl.replaceChildren(/* with nothing */);
-    return;
-  }
-  const rootAncestor = ancestors[0];
+function renderAncestors(details: DetailEntry, closedIdSignals: ClosedIdSignals) {
   const [instance] = key.split("/", 1); // a bit hacky
-  reRenderInto(ancestorsEl,
-    H("div.root-ancestor",
-      renderToot(rootAncestor, instance, linkConfigSig),
-      H("div.more-ancestors",
-        ancestors.length === 1 ? "↓" :
-        `↓\u2003${ancestors.length - 1} more ancestor toot(s)`
-      )
+  reRenderInto(ancestorsEl, details.ancestors.map(toot =>
+    renderToot(
+      toot, instance, linkConfigSig,
+      toggleClosed(versionId(toot), key),
+      closedIdSignals.get(versionId(toot))!,
     )
-  )
+  ))
 }
 
 type ClosedIdSignals = Map<string, Signal<boolean | undefined>>;
 
 async function renderDetails(details: DetailEntry) {
+  const {ancestors, root, descendants} = details;
   const closedIdSignals: ClosedIdSignals =
-    new Map([details.root, ...details.descendants].map(toot =>
+    new Map([...ancestors, root, ...descendants].map(toot =>
       [versionId(toot), signal<boolean>()]
     ));
   effect(() => {
@@ -443,7 +424,7 @@ async function renderDetails(details: DetailEntry) {
     }
   });
 
-  renderAncestors(details);
+  renderAncestors(details, closedIdSignals);
   effect(() => {
     switch (displayModeSig.value) {
       case "hierarchical": {
@@ -463,7 +444,7 @@ async function renderDetails(details: DetailEntry) {
 
 async function show(withDetails: boolean) {
   await setClosedIdsSignal();
-  const [instance, id] = key.split("/");
+  const [instance, id] = key.split("/"); // particularly hacky (what if an id contains a "/"?)
   const overview = await db.get("treeOverview", key);
   if (!overview) {
     renderUnfollowed(instance, id);
