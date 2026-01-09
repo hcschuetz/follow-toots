@@ -46,7 +46,7 @@ function renderToot(
       closeOpenButton =
       toggleClosed && H("button.close-open", {"@click": toggleClosed}),
       headerLinks("status"),
-      H("span.visibility", `[${toot.visibility}]`),
+      H("span.visibility", toot.visibility),
       toot.edited_at ? [
         H("span.toot-created.line-through", formatDate(toot.created_at)),
         H("span.toot-edited", formatDate(toot.edited_at)),
