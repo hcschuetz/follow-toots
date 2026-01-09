@@ -376,9 +376,23 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
           }
         ),
         mode
+      )),
+      H("label",
+        el => {
+          effect(() => {
+            el.hidden = displayModeSig.value !== "chronological";
+          });
+        },
+        H("input", {
+          type: "checkbox",
+          "@change": ev => document.body.classList.toggle(
+            "hide-closed-toots",
+            (ev.currentTarget as HTMLInputElement).checked,
+          ),
+        }),
+        "hide closed toots completely",
       )
-      )
-    )
+    ),
   );
 }
 

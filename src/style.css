@@ -77,10 +77,6 @@ body.tree {
         display: flex;
         flex-wrap: wrap;
         gap: 1em;
-        label {
-          display: flex;
-          align-items: center;
-        }
       }
     }
   }
@@ -333,6 +329,10 @@ body.tree {
       }
     }
   }
+}
+
+.hide-closed-toots #descendants ul.toot-list > li:has(> .toot.closed)  {
+  display: none;
 }
 
 #config-links {

@@ -41,6 +41,11 @@ function renderToot(
 
   let closeOpenButton: HTMLButtonElement | undefined;
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
+    el => {
+      effect(() => {
+        el.classList.toggle("closed", Boolean(!closedSig || closedSig.value));
+      })
+    },
     H("div.toot-head",
       prefix,
       closeOpenButton =
