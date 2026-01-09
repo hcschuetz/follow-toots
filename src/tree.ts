@@ -138,7 +138,7 @@ function renderChildrenMismatch(diff: number): HTMLElement | void {
 function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals): void {
   const {key, root, descendants} = details;
 
-  // A recursive datastructure is built without recursion:
+  // Building a recursive datastructure without recursion:
   // - Create subtree nodes for each toot and index them by an auxiliary map.
   // - Then add reverse pointers to the `in_reply_to_id` pointers of toots.
   const id2subTree = new Map([root, ...descendants].map(toot =>
@@ -287,40 +287,26 @@ function navigate(ev: KeyboardEvent) {
 function renderTootList(
   details: DetailEntry,
   closedIdSignals: ClosedIdSignals,
-  restricted: boolean,
 ) {
   const {key, root, descendants} = details;
   const [instance] = key.split("/", 1); // a bit hacky
   reRenderInto(descendantsEl,
     H("ul.toot-list",
-      [root, ...descendants].map((toot, i) =>
-        H("div.contents",
-          el => {
-            effect(() => {
-              el.replaceChildren(
-                ...(
-                  i > 0 && restricted &&
-                  closedIdSignals.get(versionId(toot))?.value
-                ) ? [] : [
-                  H("li",
-                    renderToot(
-                      toot, instance,
-                      linkConfigSig,
-                      toggleClosed(versionId(toot), key),
-                      closedIdSignals.get(versionId(toot)),
-                    ),
-                  )
-                ]
-              )
-            })
-          }
-        )
+      [root, ...descendants].map(toot =>
+        H("li",
+          renderToot(
+            toot, instance,
+            linkConfigSig,
+            toggleClosed(versionId(toot), key),
+            closedIdSignals.get(versionId(toot)),
+          ),
+        ),
       ),
     ),
   )
 }
 
-const displayModes = ["hierarchical", "chronological", "root + open"] as const;
+const displayModes = ["hierarchical", "chronological"] as const;
 type DisplayMode = (typeof displayModes)[number]
 const displayModeSig = signal<DisplayMode>("hierarchical", {name: "displayMode"});
 
@@ -451,11 +437,7 @@ async function renderDetails(details: DetailEntry) {
         break;
       }
       case "chronological": {
-        renderTootList(details, closedIdSignals, false);
-        break;
-      }
-      case "root + open": {
-        renderTootList(details, closedIdSignals, true);
+        renderTootList(details, closedIdSignals);
         break;
       }
       default: {
