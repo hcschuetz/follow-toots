@@ -203,8 +203,8 @@ body.tree {
     &.visibility-public > .toot-head > .visibility {
       display: none;
     }
-    &.visibility-unlisted > .toot-head > .visibility {
-      background-color: #dd8;
+    > .toot-head > .visibility {
+      background-color: #ff8;
     }
     /* TODO also distinguish visibility "private" from "direct"? */
     summary {
