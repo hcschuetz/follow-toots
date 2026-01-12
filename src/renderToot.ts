@@ -15,8 +15,8 @@ function renderToot(
   toot: Status,
   instance: string,
   linkConfigSig: Signal<LinkConfig | undefined>,
-  toggleClosed: () => unknown,
-  closedSig: Signal<boolean | undefined>,
+  toggleSeen: () => unknown,
+  seenSig: Signal<boolean | undefined>,
   prefix?: HTMLElement | string,
 ): HTMLElement {
 
@@ -39,17 +39,21 @@ function renderToot(
       });
     });
 
-  let closeOpenButton: HTMLButtonElement | undefined;
+  let seenCheckbox: HTMLInputElement | undefined;
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
     el => {
       effect(() => {
-        el.classList.toggle("closed", Boolean(closedSig.value));
+        el.classList.toggle("seen", Boolean(seenSig.value));
       })
     },
     H("div.toot-head",
       prefix,
-      closeOpenButton =
-      H("button.close-open", {"@click": toggleClosed}),
+      seenCheckbox =
+      H("input.seen", {
+        type: "checkbox",
+        "@change": toggleSeen,
+        title: "Mark toot as seen/unseen"
+      }),
       headerLinks("status"),
       H("span.visibility", toot.visibility),
       toot.edited_at ? [
@@ -188,10 +192,9 @@ function renderToot(
 
       body.classList.add("toot-full-body");
       effect(() => {
-        const closed = Boolean(closedSig.value);
-        closeOpenButton!.textContent = closed ?  "+" : "−";
-        closeOpenButton!.title = closed ? "Open toot" : "Close toot"; 
-        body.hidden = closed;
+        const seen = Boolean(seenSig.value);
+        seenCheckbox!.checked = seen;
+        body.hidden = seen;
       });
       return body;
     },

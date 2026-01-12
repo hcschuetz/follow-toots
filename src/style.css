@@ -331,7 +331,7 @@ body.tree {
   }
 }
 
-.hide-closed-toots #descendants ul.toot-list > li:has(> .toot.closed)  {
+.hide-closed-toots #descendants ul.toot-list > li:has(> .toot.seen)  {
   display: none;
 }
 
