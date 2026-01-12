@@ -5,7 +5,7 @@ import type { Status } from './mastodon-entities';
  *
  * ...consisting of the toot id and (if present) the edit date.
  *
- * Used to re-open a closed toot after an edit.
+ * Used to make a seen toot unseen again after an edit.
  * @param toot
  * @returns
  */

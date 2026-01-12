@@ -44,11 +44,11 @@
     Select one of the list entries to see the corresponding tree.
   </p>
   <p>
-    Initially all the toots in a tree are open.
-    You can close the toots you have already read
-    by clicking the "−" button.
-    When you reload the tree, closed toots remain closed.
-    Any new toots will be open.
+    Initially all the toots in a tree are in state "unseen" and will be
+    displayed completely.
+    You can mark toots as seen by checking the checkbox,
+    which hides the toot body.
+    Newly incoming toots will be "unseen" and will thus be displayed completely.
     This way you find new replies quickly without the need
     for searching through a tree again and again.
   </p>
@@ -70,8 +70,7 @@
     <li>
       You can view the descendants of a toot in hierarchical mode (as a tree)
       and in chronological mode (as a list).
-      There is also a mode where you only see the root toot
-      and any toots you have not yet closed.
+      In the latter mode it is also possible to hide seen toots completely.
       <br>
       By the way, the hierarchical view detects threads and displays them
       without indentation but with numbered toots.

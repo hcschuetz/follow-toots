@@ -49,7 +49,7 @@ async function fetchTree(instance: string, id: string) {
     {
       const {store} = db.transaction("treeOverview", "readwrite");
       await store.put(
-        asgn(await store.get(key) ?? {closedIds: new Set()} as OverviewEntry, {
+        asgn(await store.get(key) ?? {seenIds: new Set()} as OverviewEntry, {
           key, instance, id,
           lastRequestDate: new Date(),
         }),
@@ -98,7 +98,7 @@ async function fetchTree(instance: string, id: string) {
         key,
         lastRetrievalDate: new Date(),
         nToots: ancestors.length + 1 + descendants.length,
-        nOpen: countOpen([...ancestors, root, ...descendants], o.closedIds),
+        nUnseen: countUnseen([...ancestors, root, ...descendants], o.seenIds),
         rootCreatedAt: new Date(root.created_at),
         lastCreatedAt: new Date((descendants.at(-1) ?? root).created_at),
         rootAuthor: root.account.display_name,
@@ -125,11 +125,11 @@ function html2text(html: string) {
 const count = <T>(values: T[], pred: (item: T) => boolean) =>
   values.reduce((acc, item) => acc + Number(pred(item)), 0);
 
-const countOpen = (toots: Status[], closedIds: Set<string>): number =>
-  count(toots, toot => !closedIds.has(versionId(toot)));
+const countUnseen = (toots: Status[], seenIds: Set<string>): number =>
+  count(toots, toot => !seenIds.has(versionId(toot)));
 
 export
-async function updateClosed(overview: OverviewEntry) {
+async function updateSeen(overview: OverviewEntry) {
   const tx = db.transaction(["treeOverview", "treeDetails"], "readwrite");
   // TODO It should not be necessary to get this from the database.
   // Put per-tree actions into a class, which holds the current overview
@@ -139,7 +139,7 @@ async function updateClosed(overview: OverviewEntry) {
   const {root, ancestors, descendants} = details;
   await tx.objectStore("treeOverview").put({
     ...overview,
-    nOpen: countOpen([...ancestors, root, ...descendants], overview.closedIds),
+    nUnseen: countUnseen([...ancestors, root, ...descendants], overview.seenIds),
   });
   notify.updatedTreeOverview(overview.key);
 }
@@ -148,7 +148,7 @@ export
 async function deleteTree({key, rootAuthor}: OverviewEntry) {
   if (!confirm(`Really unfollow toot ${key} by ${rootAuthor}?` +
     `\n\nThis will not only remove the toot tree from this application, ` +
-    `but it will also forget which toots you have already closed.`)) {
+    `but it will also forget which toots you have already seen.`)) {
     return;
   }
   const tx = db.transaction(["treeOverview", "treeDetails"], "readwrite");

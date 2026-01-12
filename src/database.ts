@@ -9,7 +9,7 @@ interface OverviewEntry {
   id: string;
   lastRequestDate: Date;
   lastRetrievalDate?: Date;
-  closedIds: Set<string>;
+  seenIds: Set<string>;
   rootAuthor?: string;
   rootAuthorAvatar?: string;
   rootAccountEmojis?: CustomEmoji[];
@@ -18,7 +18,7 @@ interface OverviewEntry {
   rootCreatedAt?: Date;
   lastCreatedAt?: Date;
   nToots?: number;
-  nOpen?: number;
+  nUnseen?: number;
 };
 
 export
@@ -59,14 +59,22 @@ interface Schema extends DBSchema {
   }
 }
 
-const dbVersion = 1;
+const dbVersion = 3;
 
 export default openDB<Schema>("followToots", dbVersion, {
-  upgrade(db) {
-    [...db.objectStoreNames].forEach(name => db.deleteObjectStore(name));
-    db.createObjectStore("treeOverview", {keyPath: "key"});
-    db.createObjectStore("treeDetails", {keyPath: "key"});
-    db.createObjectStore("config", {keyPath: "key"});
-    db.createObjectStore("accessTokens", {keyPath: "instance"});
+  async upgrade(db, oldVersion, _newVersion, tx) {
+    if (oldVersion < 1) {
+      [...db.objectStoreNames].forEach(name => db.deleteObjectStore(name));
+      db.createObjectStore("treeOverview", {keyPath: "key"});
+      db.createObjectStore("treeDetails", {keyPath: "key"});
+      db.createObjectStore("config", {keyPath: "key"});
+      db.createObjectStore("accessTokens", {keyPath: "instance"});
+    }
+    if (oldVersion < 3) {
+      const overviewStore = tx.objectStore("treeOverview");
+      for (const o of await overviewStore.getAll()) {
+        await overviewStore.put(Object.assign({seenIds: (o as any).closedIds ?? o.seenIds ?? new Set()}, o));
+      }
+    }
   },
 });

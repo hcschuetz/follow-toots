@@ -90,7 +90,7 @@ async function show() {
   reRenderInto(theGrid,
     H("div.bold", "Root Author"),
     H("div.bold", "Toots"),
-    H("div.bold", "Open"),
+    H("div.bold", "Unseen"),
     H("div.bold", "Last Toot"),
     H("div.bold", "Last Fetch"),
     H("button", {"@click": reloadAll}, "⟳ Reload All"),
@@ -110,17 +110,8 @@ async function show() {
           o.rootAuthor ? emojify(o.rootAuthor, o.rootAccountEmojis) : o.key,
         ),
       ),
-      H("div.right",
-        `${1 + (o.nDescendants ?? 0)}`,
-        el => {
-          if (o.nDescendants !== o.nExpectedDescendants) {
-            el.classList.add("warn");
-            el.textContent = "≈" + el.textContent;
-            el.title = `Expected ${(o.nExpectedDescendants ?? 0) + 1} toot(s).`;
-          }
-        }
-      ),
-      H("div.right", o.nOpen?.toString() ?? ""),
+      H("div.right", `${o.nToots ?? 0}`),
+      H("div.right", o.nUnseen?.toString() ?? ""),
       dateEl(o.lastCreatedAt),
       dateEl(o.lastRetrievalDate),
       H("button", {"@click": () => fetchTree(o.instance, o.id)}, "⟳ Reload"),

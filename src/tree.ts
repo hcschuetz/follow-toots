@@ -1,6 +1,6 @@
 import { effect, Signal, signal } from '@preact/signals-core';
 
-import { deleteTree, fetchTree, updateClosed } from './actions';
+import { deleteTree, fetchTree, updateSeen } from './actions';
 import H, { reRenderInto } from './H';
 import database, { type DetailEntry, type OverviewEntry, type SubTree } from './database';
 import type { Notifications } from './Notifications';
@@ -70,44 +70,44 @@ setupNotifications<Notifications>("followToots", {
 
 const db = await database;
 
-const closedIdsSignal = signal<Set<string> | undefined>(undefined, {name: "closedIds"});
+const seenIdsSignal = signal<Set<string> | undefined>(undefined, {name: "seenIds"});
 
-async function setClosedIdsSignal() {
-  closedIdsSignal.value = (await db.get("treeOverview", key))?.closedIds;
+async function setSeenIdsSignal() {
+  seenIdsSignal.value = (await db.get("treeOverview", key))?.seenIds;
 }
 
 const appEl = document.querySelector<HTMLElement>("#app")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
-async function openAll() {
+async function markAllAsUnseen() {
   const overview = await db.get("treeOverview", key);
   if (!overview) return;
-  overview.closedIds.clear();
-  updateClosed(overview);
+  overview.seenIds.clear();
+  updateSeen(overview);
 }
 
-async function closeAll() {
+async function markAllAsSeen() {
   const overview = await db.get("treeOverview", key);
   if (!overview) return;
   const details = await db.get("treeDetails", key);
   if (!details) return;
   const {ancestors, root, descendants} = details;
-  const {closedIds} = overview;
-  [...ancestors, root, ...descendants].forEach(toot => closedIds.add(versionId(toot)));
-  updateClosed(overview);
+  const {seenIds} = overview;
+  [...ancestors, root, ...descendants].forEach(toot => seenIds.add(versionId(toot)));
+  updateSeen(overview);
 }
 
-const toggleClosed = (tootId: string, rootKey: string) => async () => {
+const toggleSeen = (tootId: string, rootKey: string) => async () => {
   const overview = await db.get("treeOverview", rootKey);
   if (!overview) return;
-  const {closedIds} = overview;
-  if (closedIds.has(tootId)) {
-    closedIds.delete(tootId);
+  const {seenIds} = overview;
+  if (seenIds.has(tootId)) {
+    seenIds.delete(tootId);
   } else {
-    closedIds.add(tootId);
+    seenIds.add(tootId);
   }
-  updateClosed(overview);
+  updateSeen(overview);
 };
 
 const linkConfigSig =
@@ -135,7 +135,7 @@ function renderChildrenMismatch(diff: number): HTMLElement | void {
   }
 }
 
-function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals): void {
+function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): void {
   const {key, root, descendants} = details;
 
   // Building a recursive datastructure without recursion:
@@ -165,8 +165,8 @@ function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals):
     yield renderToot(
       toot, instance,
       linkConfigSig,
-      toggleClosed(versionId(toot), key),
-      closedIdSignals.get(versionId(toot))!,
+      toggleSeen(versionId(toot), key),
+      seenIdSignals.get(versionId(toot))!,
       threadPosMarker,
     );
     if (children.length) {
@@ -181,12 +181,12 @@ function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals):
             {"@keydown": navigate},
             el => {
               effect(() => {
-                function countDescendants(children: SubTree[], openOnly: boolean) {
+                function countDescendants(children: SubTree[], unseenOnly: boolean) {
                   const recur = (children: SubTree[]): number =>
                     children.reduce(
                       (acc, {toot, children}) =>
                         acc +
-                        Number(!(openOnly && closedIdSignals.get(versionId(toot))?.value)) +
+                        Number(!(unseenOnly && seenIdSignals.get(versionId(toot))?.value)) +
                         recur(children),
                       0
                     );
@@ -195,12 +195,12 @@ function renderTootTree(details: DetailEntry, closedIdSignals: ClosedIdSignals):
 
                 const nTotalReplies = countDescendants(children, false);
                 const nReReplies = nTotalReplies - children.length;
-                const nOpen = countDescendants(children, true);
+                const nUnseen = countDescendants(children, true);
                 el.textContent = `${
                   nTotalReplies} replies (${
                   children.length} direct, ${
                   nReReplies} indirect), ${
-                  nOpen} open${
+                  nUnseen} unseen${
                   selfReply ? "; thread continued" : ""}`;
               });
             }
@@ -286,7 +286,7 @@ function navigate(ev: KeyboardEvent) {
 
 function renderTootList(
   details: DetailEntry,
-  closedIdSignals: ClosedIdSignals,
+  seenIdSignals: SeenIdSignals,
 ) {
   const {key, root, descendants} = details;
   const [instance] = key.split("/", 1); // a bit hacky
@@ -297,8 +297,8 @@ function renderTootList(
           renderToot(
             toot, instance,
             linkConfigSig,
-            toggleClosed(versionId(toot), key),
-            closedIdSignals.get(versionId(toot))!,
+            toggleSeen(versionId(toot), key),
+            seenIdSignals.get(versionId(toot))!,
           ),
         ),
       ),
@@ -330,16 +330,16 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
     ),
     H("span.tree-head-statistics",
       H("span", `${overview.nToots ?? "??"} toot(s)`),
-      H("span", `${overview.nOpen ?? "??"} open`)
+      H("span", `${overview.nUnseen ?? "??"} unseen`)
     ),
     H("div.tree-head-buttons",
       H("button", {
-        textContent: "[−] Close all",
-        "@click": () => closeAll(),
+        textContent: "All seen",
+        "@click": () => markAllAsSeen(),
       }),
       H("button", {
-        textContent: "[+] Open all",
-        "@click": () => openAll(),
+        textContent: "All unseen",
+        "@click": () => markAllAsUnseen(),
       }),
       H("button", {
         textContent: "⟳ Reload",
@@ -374,11 +374,11 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
         H("input", {
           type: "checkbox",
           "@change": ev => document.body.classList.toggle(
-            "hide-closed-toots",
+            "hide-seen-toots",
             (ev.currentTarget as HTMLInputElement).checked,
           ),
         }),
-        "hide closed toots completely",
+        "hide seen toots completely",
       )
     ),
   );
@@ -399,40 +399,40 @@ function renderUnfollowed(instance: string, id: string) {
   descendantsEl.replaceChildren(/* with nothing */);
 }
 
-function renderAncestors(details: DetailEntry, closedIdSignals: ClosedIdSignals) {
+function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
   const [instance] = key.split("/", 1); // a bit hacky
   reRenderInto(ancestorsEl, details.ancestors.map(toot =>
     renderToot(
       toot, instance, linkConfigSig,
-      toggleClosed(versionId(toot), key),
-      closedIdSignals.get(versionId(toot))!,
+      toggleSeen(versionId(toot), key),
+      seenIdSignals.get(versionId(toot))!,
     )
   ))
 }
 
-type ClosedIdSignals = Map<string, Signal<boolean | undefined>>;
+type SeenIdSignals = Map<string, Signal<boolean | undefined>>;
 
 async function renderDetails(details: DetailEntry) {
   const {ancestors, root, descendants} = details;
-  const closedIdSignals: ClosedIdSignals =
+  const seenIdSignals: SeenIdSignals =
     new Map([...ancestors, root, ...descendants].map(toot =>
       [versionId(toot), signal<boolean>()]
     ));
   effect(() => {
-    for (const [id, sig] of closedIdSignals) {
-      sig.value = closedIdsSignal.value?.has(id);
+    for (const [id, sig] of seenIdSignals) {
+      sig.value = seenIdsSignal.value?.has(id);
     }
   });
 
-  renderAncestors(details, closedIdSignals);
+  renderAncestors(details, seenIdSignals);
   effect(() => {
     switch (displayModeSig.value) {
       case "hierarchical": {
-        renderTootTree(details, closedIdSignals);
+        renderTootTree(details, seenIdSignals);
         break;
       }
       case "chronological": {
-        renderTootList(details, closedIdSignals);
+        renderTootList(details, seenIdSignals);
         break;
       }
       default: {
@@ -443,7 +443,7 @@ async function renderDetails(details: DetailEntry) {
 }
 
 async function show(withDetails: boolean) {
-  await setClosedIdsSignal();
+  await setSeenIdsSignal();
   const [instance, id] = key.split("/"); // particularly hacky (what if an id contains a "/"?)
   const overview = await db.get("treeOverview", key);
   if (!overview) {
