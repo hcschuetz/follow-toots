@@ -86,6 +86,9 @@ body.tree {
       }
     }
   }
+  &:has(#hide-seen-toots:checked) ul.toot-list > li:has(> .toot.seen)  {
+    display: none;
+  }
 }
 
 #toot-tree {
@@ -335,10 +338,6 @@ body.tree {
       }
     }
   }
-}
-
-.hide-seen-toots #descendants ul.toot-list > li:has(> .toot.seen)  {
-  display: none;
 }
 
 #config-links {

@@ -373,10 +373,7 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
         },
         H("input.volatile", {
           type: "checkbox",
-          "@change": ev => document.body.classList.toggle(
-            "hide-seen-toots",
-            (ev.currentTarget as HTMLInputElement).checked,
-          ),
+          id: "hide-seen-toots"
         }),
         "hide seen toots completely",
       )
