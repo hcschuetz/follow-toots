@@ -12,6 +12,8 @@
   -moz-osx-font-smoothing: grayscale;
 
   --page-width: 800px;
+
+  accent-color: blue;
 }
 
 body:not(.tree) {
@@ -19,6 +21,10 @@ body:not(.tree) {
   box-sizing: border-box;
   max-width: var(--page-width);
   padding: 1em;
+}
+
+body.overview:has(#hide-all-seen:checked) .all-seen {
+  display: none;
 }
 
 body.tree {
@@ -503,6 +509,10 @@ code {
 
 .line-through {
   text-decoration: line-through;
+}
+
+.volatile {
+  accent-color: brown;
 }
 
 .warn {

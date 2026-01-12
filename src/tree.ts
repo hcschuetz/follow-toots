@@ -352,7 +352,7 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
     ),
     H("div.tree-head-choose-mode",
       displayModes.map(mode => H("label",
-        H("input",
+        H("input.volatile",
           {
             type: "radio",
             "@click": () => { displayModeSig.value = mode; },
@@ -371,7 +371,7 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
             el.hidden = displayModeSig.value !== "chronological";
           });
         },
-        H("input", {
+        H("input.volatile", {
           type: "checkbox",
           "@change": ev => document.body.classList.toggle(
             "hide-seen-toots",

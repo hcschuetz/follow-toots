@@ -6,6 +6,7 @@ import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
 import formatDate from './formatDate';
+import { effect } from '@preact/signals-core';
 
 const db = await database;
 
@@ -95,7 +96,12 @@ async function show() {
     H("div.bold", "Last Fetch"),
     H("button", {"@click": reloadAll}, "⟳ Reload All"),
     H("button", {"@click": deleteAll}, "✗ Remove All"),
-    entries.map(o => [
+    entries.map(o => H("div.contents",
+      el => {
+        effect(() => {
+          el.classList.toggle("all-seen", !o.nUnseen);
+        });
+      },
       H("div.separator"),
       H("span.root-author",
         H("img.root-author-icon", {src: o.rootAuthorAvatar}),
@@ -117,7 +123,7 @@ async function show() {
       H("button", {"@click": () => fetchTree(o.instance, o.id)}, "⟳ Reload"),
       H("button", {"@click": () => deleteTree(o)}, "✗ Remove"),
       o.teaser && H("div.teaser", o.teaser),
-    ]),
+    )),
   );
 }
 
