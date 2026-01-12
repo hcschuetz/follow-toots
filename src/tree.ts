@@ -398,13 +398,17 @@ function renderUnfollowed(instance: string, id: string) {
 
 function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
   const [instance] = key.split("/", 1); // a bit hacky
-  reRenderInto(ancestorsEl, details.ancestors.map(toot =>
-    renderToot(
-      toot, instance, linkConfigSig,
-      toggleSeen(versionId(toot), key),
-      seenIdSignals.get(versionId(toot))!,
-    )
-  ))
+  reRenderInto(ancestorsEl,
+    H("ul.toot-list",
+      details.ancestors.map(toot => H("li",
+        renderToot(
+          toot, instance, linkConfigSig,
+          toggleSeen(versionId(toot), key),
+          seenIdSignals.get(versionId(toot))!,
+        )
+      )),
+    ),
+  );
 }
 
 type SeenIdSignals = Map<string, Signal<boolean | undefined>>;

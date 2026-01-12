@@ -86,7 +86,7 @@ body.tree {
       }
     }
   }
-  &:has(#hide-seen-toots:checked) ul.toot-list > li:has(> .toot.seen)  {
+  &:has(label:not([hidden]) > #hide-seen-toots:checked) ul.toot-list > li:has(> .toot.seen) {
     display: none;
   }
 }
