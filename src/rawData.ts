@@ -24,10 +24,7 @@ async function show() {
   for (const details of await tx.objectStore("treeDetails").getAll()) {
     byKey[details.key] = {
       ...byKey[details.key] ?? {},
-      details: {
-        ...details,
-        tootTree: "[omitted to avoid duplicate output]" as any,
-      },
+      details,
     };
   }
 
