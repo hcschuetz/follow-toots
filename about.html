@@ -53,8 +53,21 @@
     for searching through a tree again and again.
   </p>
   <p>
-    Most of the application state is persisted by your browser.
-    It survives closing and re-opening the pages or even a browser restart.
+    Actually the previous paragraph just describes the default behavior.
+    It is possible to change what is being displayed by the menus
+    in the header of the tree page.
+  </p>
+  <p>
+    Important parts of the application state are persisted by your browser:
+  </p>
+  <ul>
+    <li>the toots you follow (together with their ancestors and descendants),</li>
+    <li>which toots you have marked as seen,</li>
+    <li>and configuration choices.</li>
+  </ul>
+  <p>
+    This state data survives the closing and re-opening of pages
+    and even a browser restart.
   </p>
 
   <h2>More Notes</h2>
@@ -78,6 +91,9 @@
     <li>
       The toot display does not yet support all the possible features of a toot,
       but it should cover the most important cases.
+      And (at least for now) it is read-only.
+      But if you want to interact with a toot or user,
+      it is easy to navigate back to another mastodon web client.
     </li>
   </ul>
   <script type="module" src="src/nav.ts"></script>
