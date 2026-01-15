@@ -511,10 +511,6 @@ code {
   text-decoration: line-through;
 }
 
-.volatile {
-  accent-color: brown;
-}
-
 .warn {
   background-color: #ff0;
   margin-inline: -3px;
