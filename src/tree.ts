@@ -1,7 +1,7 @@
 import { effect, Signal, signal } from '@preact/signals-core';
 
 import { deleteTree, fetchTree, updateSeen } from './actions';
-import H, { reRenderInto } from './H';
+import H, { renderInto, reRenderInto, type HParam } from './H';
 import database, { type DetailEntry, type OverviewEntry, type SubTree } from './database';
 import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
@@ -162,59 +162,55 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
       prevThreadPos > 0 || selfReply ? H("span.thread-pos", `#${threadPos}`) :
       undefined;
     const [instance] = key.split("/", 1); // a bit hacky
-    yield renderToot(
-      toot, instance,
-      linkConfigSig,
-      toggleSeen(versionId(toot), key),
-      seenIdSignals.get(versionId(toot))!,
-      threadPosMarker,
-    );
-    if (children.length) {
-      const ul = H("ul.tree-node",
-        children.map(subtree => H("li", descend(subtree))),
-        renderChildrenMismatch(children.length + (selfReply ? 1 : 0) - toot.replies_count),
-      );
-      yield (
-        // nTotalReplies === 1 ? ul :
-        H("details.replies", {open: true},
-          H("summary",
-            {"@keydown": navigate},
-            el => {
-              effect(() => {
-                function countDescendants(children: SubTree[], unseenOnly: boolean) {
-                  const recur = (children: SubTree[]): number =>
-                    children.reduce(
-                      (acc, {toot, children}) =>
-                        acc +
-                        Number(!(unseenOnly && seenIdSignals.get(versionId(toot))?.value)) +
-                        recur(children),
-                      0
-                    );
-                  return recur(children);
-                }
+    yield H("li",
+      renderToot(
+        toot, instance,
+        linkConfigSig,
+        toggleSeen(versionId(toot), key),
+        seenIdSignals.get(versionId(toot))!,
+        threadPosMarker,
+      ),
+      children.length === 0 ? null : H("details.replies", {open: true},
+        H("summary",
+          {"@keydown": navigate},
+          el => {
+            effect(() => {
+              function countDescendants(children: SubTree[], unseenOnly: boolean) {
+                const recur = (children: SubTree[]): number =>
+                  children.reduce(
+                    (acc, {toot, children}) =>
+                      acc +
+                      Number(!(unseenOnly && seenIdSignals.get(versionId(toot))?.value)) +
+                      recur(children),
+                    0
+                  );
+                return recur(children);
+              }
 
-                const nTotalReplies = countDescendants(children, false);
-                const nReReplies = nTotalReplies - children.length;
-                const nUnseen = countDescendants(children, true);
-                el.textContent = `${
-                  nTotalReplies} replies (${
-                  children.length} direct, ${
-                  nReReplies} indirect), ${
-                  nUnseen} unseen${
-                  selfReply ? "; thread continued" : ""}`;
-              });
-            }
-          ),
-          ul,
-        )
-      );
-    }
+              const nTotalReplies = countDescendants(children, false);
+              const nReReplies = nTotalReplies - children.length;
+              const nUnseen = countDescendants(children, true);
+              el.textContent = `${
+                nTotalReplies} replies (${
+                children.length} direct, ${
+                nReReplies} indirect), ${
+                nUnseen} unseen${
+                selfReply ? "; thread continued" : ""}`;
+            });
+          }
+        ),
+        H("ul.toot-list",
+          children.map(descend),
+          renderChildrenMismatch(children.length + (selfReply ? 1 : 0) - toot.replies_count),
+        ),
+      ),
+    );
     if (selfReply) {
       yield* descend(selfReply, threadPos);
     }
   }
 
-  reRenderInto(descendantsEl, descend(tootTree));
+  reRenderInto(descendantsEl, H("ul.toot-list", descend(tootTree)));
 }
 
 function visibleSummaries(): HTMLElement[] {
@@ -310,75 +306,33 @@ const displayModes = ["hierarchical", "chronological"] as const;
 type DisplayMode = (typeof displayModes)[number]
 const displayModeSig = signal<DisplayMode>("hierarchical", {name: "displayMode"});
 
+// TODO nicer treatment of children vs. attributes vs. event handlers
+
+function fill<E extends HTMLElement>(selectors: string, ...content: HParam<E>[]) {
+  renderInto(document.querySelector<E>(selectors)!, ...content);
+}
+
+function refill<E extends HTMLElement>(selectors: string, ...content: HParam<E>[]) {
+  reRenderInto(document.querySelector<E>(selectors)!, ...content);
+}
+
 function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
   const {rootAuthor, rootAccountEmojis} = overview;
-  reRenderInto(appEl,
-    H("div.tree-head-author",
-      H("img.tree-head-avatar", { src: overview.rootAuthorAvatar }),
-      H("span.tree-head-name",
-        rootAuthor ? emojify(rootAuthor, rootAccountEmojis) : key,
-      ),
-      H("span.tree-head-acct",
-        overview.rootAcct ? `@${overview.rootAcct} on ${instance}` : ""
-      )
-    ),
-    H("span.tree-head-date",
-      formatDate(overview.rootCreatedAt),
-      "\u2002–\u2002",
-      formatDate(overview.lastCreatedAt),
-      `\u2003last fetched ${formatDate(overview.lastRetrievalDate)}`
-    ),
-    H("span.tree-head-statistics",
-      H("span", `${overview.nToots ?? "??"} toot(s)`),
-      H("span", `${overview.nUnseen ?? "??"} unseen`)
-    ),
-    H("div.tree-head-buttons",
-      H("button", {
-        textContent: "All seen",
-        "@click": () => markAllAsSeen(),
-      }),
-      H("button", {
-        textContent: "All unseen",
-        "@click": () => markAllAsUnseen(),
-      }),
-      H("button", {
-        textContent: "⟳ Reload",
-        "@click": () => fetchTree(instance, id),
-      }),
-      H("button", {
-        textContent: "✗ Remove",
-        "@click": () => overview && deleteTree(overview),
-      })
-    ),
-    H("div.tree-head-choose-mode",
-      displayModes.map(mode => H("label",
-        H("input.volatile",
-          {
-            type: "radio",
-            "@click": () => { displayModeSig.value = mode; },
-          },
-          el => {
-            effect(() => {
-              el.checked = mode === displayModeSig.value;
-            });
-          }
-        ),
-        mode
-      )),
-      H("label",
-        el => {
-          effect(() => {
-            el.hidden = displayModeSig.value !== "chronological";
-          });
-        },
-        H("input.volatile", {
-          type: "checkbox",
-          id: "hide-seen-toots"
-        }),
-        "hide seen toots completely",
-      )
-    ),
-  );
+  refill("#tree-head-name", rootAuthor ? emojify(rootAuthor, rootAccountEmojis) : key);
+  fill<HTMLImageElement>("#tree-head-avatar", { src: overview.rootAuthorAvatar });
+  refill("#tree-head-acct", overview.rootAcct ? `@${overview.rootAcct} on ${instance}` : "");
+  refill("#tree-head-date-from", formatDate(overview.rootCreatedAt));
+  refill("#tree-head-date-to", formatDate(overview.lastCreatedAt));
+  refill("#tree-head-date-fetched", formatDate(overview.lastRetrievalDate));
+  refill("#n-toots", overview.nToots?.toFixed() ?? "??");
+  refill("#n-unseen", overview.nUnseen?.toFixed() ?? "??");
+  fill("#all-seen", {"onclick": () => markAllAsSeen()});
+  fill("#all-unseen", {"onclick": () => markAllAsUnseen()});
+  fill("#reload", {"onclick": () => fetchTree(instance, id)});
+  fill("#remove", {"onclick": () => overview && deleteTree(overview)});
+  fill("#display-mode", {"onchange": ev =>
+    displayModeSig.value = (ev.currentTarget as HTMLSelectElement).value as DisplayMode
+  });
 }
 
 function renderUnfollowed(instance: string, id: string) {
@@ -438,6 +392,7 @@ async function renderDetails(details: DetailEntry) {
       }
       default: {
         descendantsEl.replaceChildren("Oops");
+        break;
       }
     }
   });

@@ -12,7 +12,55 @@
 
     <h1>Follow Toot</h1>
 
-    <div id="app"></div>
+    <div id="app">
+      <div class="tree-head-author">
+        <img id="tree-head-avatar">
+        <output id="tree-head-name"></output>
+        <output id="tree-head-acct"></output>
+      </div>
+      <div>
+        <output id="tree-head-date-from"></output>
+        &ensp;–&ensp;
+        <output id="tree-head-date-to"></output>
+        &emsp;
+        last fetched&nbsp;
+        <output id="tree-head-date-fetched"></output>
+      </div>
+      <div class="tree-head-statistics">
+        <span><output id="n-toots"></output> toot(s)</span>
+        <span><output id="n-unseen"></output> unseen</span>
+      </div>
+      <div class="tree-head-buttons">
+        <button id="all-seen">All seen</button>
+        <button id="all-unseen">All unseen</button>
+        <button id="reload">⟳ Reload</button>
+        <button id="remove">✗ Remove</button>
+      </div>
+      <div class="tree-head-choose-mode">
+        <label>
+          Mode:
+          <select class="volatile" id="display-mode">
+            <option value="hierarchical" selected>hierarchical</option>
+            <option value="chronological">chronological</option>
+          </select>
+        </label>
+        <label>
+          Display unseen:
+          <select id="display-unseen">
+            <option value="full" selected>full</option>
+            <option value="header-only">header-only</option>
+          </select>
+        </label>
+        <label>
+          Display seen:
+          <select id="display-seen">
+            <option value="full">full</option>
+            <option value="header-only" selected>header-only</option>
+            <option value="hidden">hidden</option>
+          </select>
+        </label>
+      </div>
+    </div>
   </header>
 
   <main id="toot-tree">

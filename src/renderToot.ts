@@ -39,21 +39,21 @@ function renderToot(
       });
     });
 
-  let seenCheckbox: HTMLInputElement | undefined;
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
-    el => {
-      effect(() => {
-        el.classList.toggle("seen", Boolean(seenSig.value));
-      })
-    },
     H("div.toot-head",
       prefix,
-      seenCheckbox =
-      H("input.seen", {
-        type: "checkbox",
-        "@change": toggleSeen,
-        title: "Mark toot as seen/unseen"
-      }),
+      H("input.seen",
+        {
+          type: "checkbox",
+          "@change": toggleSeen,
+          title: "Mark toot as seen/unseen"
+        },
+        el => {
+          effect(() => {
+            el.checked = Boolean(seenSig.value);
+          });
+        }
+      ),
       headerLinks("status"),
       H("span.visibility", toot.visibility),
       toot.edited_at ? [
@@ -191,11 +191,6 @@ function renderToot(
       }
 
       body.classList.add("toot-full-body");
-      effect(() => {
-        const seen = Boolean(seenSig.value);
-        seenCheckbox!.checked = seen;
-        body.hidden = seen;
-      });
       return body;
     },
   );

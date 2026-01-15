@@ -61,11 +61,11 @@ body.tree {
         align-items: center;
         gap: 0.5em;
 
-        img.tree-head-avatar {
+        img#tree-head-avatar {
           width: 1.5em;
           height: 1.5em;
         }
-        .tree-head-name {
+        #tree-head-name {
           font-weight: bold;
         }
       }
@@ -86,7 +86,14 @@ body.tree {
       }
     }
   }
-  &:has(label:not([hidden]) > #hide-seen-toots:checked) ul.toot-list > li:has(> .toot.seen) {
+  /* if selected by the user, hide bodies of unseen toots: */
+  &:has(#display-unseen > option[value="header-only"]:checked) .toot:has(input.seen:not(:checked)) .toot-full-body,
+  /* if selected by the user, hide bodies of seen toots: */
+  &:has(#display-seen   > option[value="header-only"]:checked) .toot:has(input.seen:checked      ) .toot-full-body,
+  /* if selected by the user, hide seen toots, unless there is an unseen nested toot: */
+  &:has(#display-seen   > option[value="hidden"     ]:checked) ul.toot-list > li:not(:has(.toot input.seen:not(:checked))),
+  /* if the "unless ..." exception above applies, hide at least the toot's body: */
+  &:has(#display-seen   > option[value="hidden"     ]:checked) .toot:has(input.seen:checked      ) .toot-full-body {
     display: none;
   }
 }
@@ -112,9 +119,9 @@ body.tree {
   &:empty {
     display: none;
   }
-  ul.tree-node {
+  ul.toot-list {
     margin: 0;
-    padding-left: 2em;
+    padding: 0;
     > li {
       margin: 0;
       &::marker {
@@ -130,6 +137,9 @@ body.tree {
         font-weight: bold;
       }
     }
+  }
+  ul.toot-list ul.toot-list {
+    padding-left: 2em;
   }
 
   /*
@@ -153,17 +163,6 @@ body.tree {
   }
   details.replies[open] > summary::before {
     content: "▼\2003";
-  }
-
-  ul.toot-list {
-    margin: 0;
-    padding: 0;
-    > li {
-      margin: 0;
-      &::marker {
-        content: "";
-      }
-    }
   }
 
   .toot {
@@ -236,9 +235,6 @@ body.tree {
       flex-direction: column;
       gap: 1em;
 
-      &[hidden] {
-        display: none;
-      }
       .toot-content {
         p {
           margin-block: 0.3em;
