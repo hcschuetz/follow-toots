@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>Follow Toots - About</title>
-  <script type="module" crossorigin src="./assets/nav-DjbL4ZGQ.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/nav-CyoZUpWn.css">
+  <script type="module" crossorigin src="./assets/nav-B2g3d2SO.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/nav-Der2by1j.css">
 </head>
 <body>
   <nav id="nav"></nav>
@@ -45,17 +45,30 @@
     Select one of the list entries to see the corresponding tree.
   </p>
   <p>
-    Initially all the toots in a tree are open.
-    You can close the toots you have already read
-    by clicking the "−" button.
-    When you reload the tree, closed toots remain closed.
-    Any new toots will be open.
+    Initially all the toots in a tree are in state "unseen" and will be
+    displayed completely.
+    You can mark toots as seen by checking the checkbox,
+    which hides the toot body.
+    Newly incoming toots will be "unseen" and will thus be displayed completely.
     This way you find new replies quickly without the need
     for searching through a tree again and again.
   </p>
   <p>
-    Most of the application state is persisted by your browser.
-    It survives closing and re-opening the pages or even a browser restart.
+    Actually the previous paragraph just describes the default behavior.
+    It is possible to change what is being displayed by the menus
+    in the header of the tree page.
+  </p>
+  <p>
+    Important parts of the application state are persisted by your browser:
+  </p>
+  <ul>
+    <li>the toots you follow (together with their ancestors and descendants),</li>
+    <li>which toots you have marked as seen,</li>
+    <li>and configuration choices.</li>
+  </ul>
+  <p>
+    This state data survives the closing and re-opening of pages
+    and even a browser restart.
   </p>
 
   <h2>More Notes</h2>
@@ -71,8 +84,7 @@
     <li>
       You can view the descendants of a toot in hierarchical mode (as a tree)
       and in chronological mode (as a list).
-      There is also a mode where you only see the root toot
-      and any toots you have not yet closed.
+      In the latter mode it is also possible to hide seen toots completely.
       <br>
       By the way, the hierarchical view detects threads and displays them
       without indentation but with numbered toots.
@@ -80,6 +92,9 @@
     <li>
       The toot display does not yet support all the possible features of a toot,
       but it should cover the most important cases.
+      And (at least for now) it is read-only.
+      But if you want to interact with a toot or user,
+      it is easy to navigate back to another mastodon web client.
     </li>
   </ul>
 </body>

@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <title>Follow Toot</title>
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <script type="module" crossorigin src="./assets/tree-Bje3Iz0Z.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/nav-DjbL4ZGQ.js">
-  <link rel="modulepreload" crossorigin href="./assets/linkConfigConfig-Dmhqv2K5.js">
-  <link rel="modulepreload" crossorigin href="./assets/database-BS-gGBMO.js">
-  <link rel="modulepreload" crossorigin href="./assets/H-BDef4IoB.js">
-  <link rel="modulepreload" crossorigin href="./assets/formatDate-Dq704Nri.js">
-  <link rel="stylesheet" crossorigin href="./assets/nav-CyoZUpWn.css">
+  <script type="module" crossorigin src="./assets/tree-DGsJBe46.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/nav-B2g3d2SO.js">
+  <link rel="modulepreload" crossorigin href="./assets/signals-core.module-psBtSSF_.js">
+  <link rel="modulepreload" crossorigin href="./assets/database-BGZyZyq9.js">
+  <link rel="modulepreload" crossorigin href="./assets/formatDate-BldI2TgA.js">
+  <link rel="modulepreload" crossorigin href="./assets/linkConfigConfig-Bp2PAGym.js">
+  <link rel="stylesheet" crossorigin href="./assets/nav-Der2by1j.css">
 </head>
 <body class="tree">
   <header class="tree-header">
@@ -18,7 +18,65 @@
 
     <h1>Follow Toot</h1>
 
-    <div id="app"></div>
+    <div id="not-following">
+      <div>
+        You are currently not following toot
+        <output id="toot-id"></output> from <output id="toot-instance"></output>.
+      </div>
+      <div>
+        <button id="follow">Follow</button> it or close this window/tab.
+      </div>
+    </div>
+    <div id="app"> <!-- TODO rename to "following" -->
+      <div class="tree-head-author">
+        <img id="tree-head-avatar">
+        <output id="tree-head-name"></output>
+        <output id="tree-head-acct"></output>
+      </div>
+      <div>
+        <output id="tree-head-date-from"></output>
+        &ensp;–&ensp;
+        <output id="tree-head-date-to"></output>
+        &emsp;
+        last fetched&nbsp;
+        <output id="tree-head-date-fetched"></output>
+      </div>
+      <div class="tree-head-statistics">
+        <span><output id="n-toots"></output> toot(s)</span>
+        <span><output id="n-unseen"></output> unseen</span>
+      </div>
+      <div id="user-stats"></div>
+      <div class="tree-head-buttons">
+        <button id="all-seen">All seen</button>
+        <button id="all-unseen">All unseen</button>
+        <button id="reload">⟳ Reload</button>
+        <button id="remove">✗ Remove</button>
+      </div>
+      <div class="tree-head-choose-mode">
+        <label>
+          Mode:
+          <select id="display-mode">
+            <option value="hierarchical" selected>hierarchical</option>
+            <option value="chronological">chronological</option>
+          </select>
+        </label>
+        <label>
+          Display unseen:
+          <select id="display-unseen">
+            <option value="full" selected>full</option>
+            <option value="header-only">header-only</option>
+          </select>
+        </label>
+        <label>
+          Display seen:
+          <select id="display-seen">
+            <option value="full">full</option>
+            <option value="header-only" selected>header-only</option>
+            <option value="hidden">hidden</option>
+          </select>
+        </label>
+      </div>
+    </div>
   </header>
 
   <main id="toot-tree">
