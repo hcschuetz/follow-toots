@@ -10,6 +10,7 @@ import emojify from './emojify';
 import renderToot, { type LinkConfig } from './renderToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
+import type { Account } from './mastodon-entities';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -264,6 +265,30 @@ type SeenIdSignals = Map<string, Signal<boolean | undefined>>;
 
 async function renderDetails(details: DetailEntry) {
   const {ancestors, root, descendants} = details;
+
+  const statsMap = new Map<string, {n: number, account: Account}>();
+  for (const toot of [...ancestors, root, ...descendants]) {
+    const accountStats = statsMap.get(toot.account.acct);
+    if (accountStats) {
+      accountStats.n++;
+    } else {
+      statsMap.set(toot.account.acct, {n: 1, account: toot.account});
+    }
+  }
+  console.log(statsMap)
+  const statsList = [...statsMap.values()];
+  statsList.sort((x, y) => y.n - x.n);
+  console.log(statsList)
+  refill("#user-stats", statsList.map(({n, account}) =>
+    H("span",
+      H("img", {
+        src: account.avatar_static,
+        title: account.display_name,
+      }),
+      n > 1 ? n.toString() : null,
+    )
+  ));
+
   const seenIdSignals: SeenIdSignals =
     new Map([...ancestors, root, ...descendants].map(toot =>
       [versionId(toot), signal<boolean>()]

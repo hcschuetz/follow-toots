@@ -65,6 +65,7 @@ body.tree {
         img#tree-head-avatar {
           width: 1.5em;
           height: 1.5em;
+          border-radius: 20%;
         }
         #tree-head-name {
           font-weight: bold;
@@ -73,6 +74,24 @@ body.tree {
       .tree-head-statistics {
         display: flex;
         gap: 1em;
+      }
+      #user-stats {
+        display: flex;
+        gap: 0.5em;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        margin-bottom: -8px;
+        span {
+          display: flex;
+          gap: 2px;
+          align-items: center;
+          overflow-wrap: normal;
+          img {
+            width: 1.2em;
+            height: 1.2em;
+            border-radius: 20%;
+          }
+        }
       }
       .tree-head-buttons {
         display: flex;
@@ -208,6 +227,7 @@ body.tree {
       img.toot-author-avatar {
         height: 1.5em;
         width: 1.5em;
+        border-radius: 20%;
       }
       .toot-author {
         font-weight: bold;
@@ -355,6 +375,7 @@ body.tree {
     img {
       width: 1.2em;
       height: 1.2em;
+      border-radius: 20%;
     }
   }
 }
@@ -469,6 +490,7 @@ code {
     img.root-author-icon {
       width: 1.5cap;
       height: 1.5cap;
+      border-radius: 20%;
 
       position: relative;
       top: 0.15cap;
