@@ -169,39 +169,9 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         seenIdSignals.get(versionId(toot))!,
         threadPosMarker,
       ),
-      children.length === 0 ? null : H("details.replies", {open: true},
-        H("summary",
-          {"@keydown": navigate},
-          el => {
-            effect(() => {
-              function countDescendants(children: SubTree[], unseenOnly: boolean) {
-                const recur = (children: SubTree[]): number =>
-                  children.reduce(
-                    (acc, {toot, children}) =>
-                      acc +
-                      Number(!(unseenOnly && seenIdSignals.get(versionId(toot))?.value)) +
-                      recur(children),
-                    0
-                  );
-                return recur(children);
-              }
-
-              const nTotalReplies = countDescendants(children, false);
-              const nReReplies = nTotalReplies - children.length;
-              const nUnseen = countDescendants(children, true);
-              el.textContent = `${
-                nTotalReplies} replies (${
-                children.length} direct, ${
-                nReReplies} indirect), ${
-                nUnseen} unseen${
-                selfReply ? "; thread continued" : ""}`;
-            });
-          }
-        ),
-        H("ul.toot-list",
-          children.map(child => descend(child)),
-          renderChildrenMismatch(children.length + (selfReply ? 1 : 0) - toot.replies_count),
-        ),
+      children.length === 0 ? null : H("ul.toot-list",
+        children.map(child => descend(child)),
+        renderChildrenMismatch(children.length + (selfReply ? 1 : 0) - toot.replies_count),
       ),
     );
     if (selfReply) {
@@ -210,73 +180,6 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
   }
 
   reRenderInto(descendantsEl, H("ul.toot-list", descend(tootTree)));
-}
-
-function visibleSummaries(): HTMLElement[] {
-  const hiddenSummaries =
-    new Set(descendantsEl.querySelectorAll(
-      "details.replies:not(:open) details.replies > summary"
-    ));
-  return (
-    [...descendantsEl.querySelectorAll<HTMLElement>("details.replies > summary")]
-    .filter(el => !hiddenSummaries.has(el))
-  );
-}
-
-function navigate(ev: KeyboardEvent) {
-  const summary = ev.currentTarget as HTMLElement;
-  const details = summary.closest("details")!;
-  let goal: HTMLElement | null | undefined;
-  switch (ev.key) {
-    case "ArrowUp": {
-      const summaries = visibleSummaries();
-      const pos = summaries.findIndex(s => s === summary);
-      if (pos >= 0) {
-        goal = summaries[pos - 1];
-      }
-      break;
-    }
-    case "ArrowDown": {
-      const summaries = visibleSummaries();
-      const pos = summaries.findIndex(s => s === summary);
-      if (pos >= 0) {
-        goal = summaries[pos + 1];
-      }
-      break;
-    }
-    case "ArrowLeft": {
-      if (details.open) {
-        details.open = false;
-        goal = summary;
-      } else {
-        goal =
-          details
-          .parentElement
-          ?.closest("details")
-          ?.querySelector<HTMLElement>("& > summary");
-      }
-      break;
-    }
-    case "ArrowRight": {
-      if (details.open) {
-        goal = details.querySelector<HTMLElement>("& details.replies > summary");
-      } else {
-        details.open = true;
-        goal = summary;
-      }
-      break;
-    }
-    default: return;
-  }
-  if (goal) {
-    goal.focus({preventScroll: true});
-    goal.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-    ev.preventDefault();
-    ev.stopImmediatePropagation();
-  }
 }
 
 function renderTootList(
