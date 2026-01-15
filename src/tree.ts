@@ -199,7 +199,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
           }
         ),
         H("ul.toot-list",
-          children.map(descend),
+          children.map(child => descend(child)),
           renderChildrenMismatch(children.length + (selfReply ? 1 : 0) - toot.replies_count),
         ),
       ),
