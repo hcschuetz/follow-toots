@@ -56,6 +56,16 @@ function renderToot(
                   );
                 }
               }
+              // Omit this menu item if this toot is already the root?
+              yield H("button.follow-toot",
+                {onclick: () => {
+                  const url = new URL("./tree.html", document.location.href);
+                  url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
+                  console.log(url.toString());
+                  window.open(url);
+                }},
+                "Follow toot",
+              );
             });
           });
         },
