@@ -1,8 +1,16 @@
 .menu {
   position: relative;
   display: inline-block;
-  > summary::marker {
-    content: "";
+  > summary {
+    padding-inline: 3px;
+    border-radius: 3px;
+    cursor: default;
+    &::marker {
+      content: "";
+    }
+    &:hover {
+      background-color: #0003;
+    }
   }
   > .items {
     position: absolute;
