@@ -76,7 +76,6 @@ async function setSeenIdsSignal() {
   seenIdsSignal.value = (await db.get("treeOverview", key))?.seenIds;
 }
 
-const appEl = document.querySelector<HTMLElement>("#app")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
@@ -336,16 +335,9 @@ function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
 }
 
 function renderUnfollowed(instance: string, id: string) {
-  reRenderInto(appEl,
-    H("div", `You are currently not following toot ${id} from ${instance}. `),
-    H("div",
-      H("button", {
-        textContent: "Follow",
-        "@click": () => fetchTree(instance, id),
-      }),
-      " it or close this tab.",
-    ),
-  );
+  refill("#toot-id", id);
+  refill("#toot-instance", instance);
+  fill("#follow", {"onclick": () => fetchTree(instance, id)});
   ancestorsEl.replaceChildren(/* with nothing */);
   descendantsEl.replaceChildren(/* with nothing */);
 }
@@ -402,6 +394,8 @@ async function show(withDetails: boolean) {
   await setSeenIdsSignal();
   const [instance, id] = key.split("/"); // particularly hacky (what if an id contains a "/"?)
   const overview = await db.get("treeOverview", key);
+  fill("#app", {hidden: !overview});
+  fill("#not-following", {hidden: Boolean(overview)});
   if (!overview) {
     renderUnfollowed(instance, id);
     return;

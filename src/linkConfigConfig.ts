@@ -10,7 +10,7 @@ export
 type LinkableFeature = keyof typeof linkableFeatures;
 
 type ClientLinkConfig = {
-  name: string;
+  name: (instance: string) => string;
   icon: string;
   urlFunctions: Record<LinkableFeature, (instance: string, status: Status) => string>;
 };
@@ -18,7 +18,7 @@ type ClientLinkConfig = {
 export
 const linkConfigConfig: Record<string, ClientLinkConfig> = {
   plain: {
-    name: "mastodon web client",
+    name: instance => instance,
     icon: "https://joinmastodon.org/logos/logo-purple.svg",
     urlFunctions: {
       status: (instance, status) => `https://${instance}/@${status.account.acct}/${status.id}`,
@@ -26,7 +26,7 @@ const linkConfigConfig: Record<string, ClientLinkConfig> = {
     }
   },
   phanpy: {
-    name: "phanpy.social",
+    name: () => "phanpy.social",
     icon: "https://phanpy.social/favicon.ico",
     urlFunctions: {
       status: (instance, status) => `https://phanpy.social/#/${instance}/s/${status.id}`,
@@ -34,7 +34,7 @@ const linkConfigConfig: Record<string, ClientLinkConfig> = {
     }
   },
   elk: {
-    name: "elk.zone",
+    name: () => "elk.zone",
     icon: "https://elk.zone/favicon.ico",
     urlFunctions: {
       status: (instance, status) =>

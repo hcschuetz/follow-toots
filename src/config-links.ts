@@ -54,7 +54,7 @@ reRenderInto(configLinksEl!,
   ...Object.entries(linkConfigConfig).flatMap(([id, client]) => [
     H("span.client-name",
       H("img", {src: client.icon}),
-      H("span", client.name),
+      H("span", client.name("standard mastodon client")),
     ),
     ...Object.keys(linkableFeatures).map(key => {
       const sig = linkConfigurationSigs[key as LinkableFeature][id];

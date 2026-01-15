@@ -1,3 +1,5 @@
+import { effect, Signal } from "@preact/signals-core";
+
 import A_blank from "./A_blank";
 import H, { reRenderInto } from "./H";
 import type { Status } from "./mastodon-entities";
@@ -5,7 +7,7 @@ import emojify, { deepEmojify } from "./emojify";
 import { linkableFeatures, linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
 import sanitize from "./sanitize";
 import formatDate from "./formatDate";
-import { effect, Signal } from "@preact/signals-core";
+import "./DropDownMenu";
 
 export 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
@@ -22,23 +24,6 @@ function renderToot(
 
   const {account, poll, card} = toot;
 
-  const headerLinks = (feature: LinkableFeature) =>
-    H("span.contents", el => {
-      effect(() => {
-        reRenderInto(el, function*() {
-          const obj = linkConfigSig.value?.[feature] ?? {};
-          for (const k in obj) if (obj[k]) {
-            const frontend = linkConfigConfig[k];
-            yield A_blank("icon-link",
-              frontend.urlFunctions[feature](instance, toot),
-              H("img.link-icon", {src: frontend.icon}),
-              {title: `Go to ${linkableFeatures[feature].toLowerCase()} on ${frontend.name}`}
-            );
-          }
-        });
-      });
-    });
-
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
     H("div.toot-head",
       prefix,
@@ -54,7 +39,27 @@ function renderToot(
           });
         }
       ),
-      headerLinks("status"),
+      H("drop-down-menu" as any,
+        el => {
+          effect(() => {
+            const {value} = linkConfigSig;
+            reRenderInto(el, function*() {
+              for (const feature of ["status", "profile"] as const) {
+                const obj = value?.[feature] ?? {};
+                for (const k in obj) if (obj[k]) {
+                  const frontend = linkConfigConfig[k];
+                  const href = frontend.urlFunctions[feature](instance, toot);
+                  yield H("button.open-link",
+                    {onclick: () => window.open(href)},
+                    H("img.link-icon", {src: frontend.icon}),
+                    ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
+                  );
+                }
+              }
+            });
+          });
+        },
+      ),
       H("span.visibility", toot.visibility),
       toot.edited_at ? [
         H("span.toot-created.line-through", formatDate(toot.created_at)),
@@ -65,7 +70,6 @@ function renderToot(
       }),
       H("span.toot-author", emojify(account.display_name, account.emojis)),
       H("span.toot-acct", "@" + account.acct),
-      headerLinks("profile"),
     ),
     () => {
       let body: HTMLElement =
