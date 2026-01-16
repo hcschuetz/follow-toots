@@ -1,5 +1,8 @@
 import H from "./H";
-import style from "./DropDownMenu.css?raw";
+import styleRaw from "./DropDownMenu.css?raw";
+
+const style = new CSSStyleSheet();
+style.replaceSync(styleRaw);
 
 export default
 class DropDownMenu extends HTMLElement {
@@ -9,8 +12,8 @@ class DropDownMenu extends HTMLElement {
     super();
     let details: HTMLDetailsElement;
     const shadowRoot = this.attachShadow({mode: "open"});
+    shadowRoot.adoptedStyleSheets.push(style);
     shadowRoot.append(
-      H("style", style),
       details =
       H("details.menu",
         H("summary", "☰"),
