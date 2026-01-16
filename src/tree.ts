@@ -282,7 +282,7 @@ async function renderDetails(details: DetailEntry) {
     H("span",
       H("img", {
         src: account.avatar_static,
-        title: account.display_name,
+        title: `${account.display_name} @${account.acct}`,
       }),
       n > 1 ? n.toString() : null,
     )
