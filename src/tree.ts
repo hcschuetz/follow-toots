@@ -77,6 +77,7 @@ async function setSeenIdsSignal() {
   seenIdsSignal.value = (await db.get("treeOverview", key))?.seenIds;
 }
 
+const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
@@ -135,9 +136,12 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
   }
   const tootTree = id2subTree.get(root.id)!;
 
-  function* descend({toot, children}: SubTree, prevThreadPos = 0):
-    Generator<HTMLElement, void, unknown>
-  {
+  function* descend(
+    {toot, children}: SubTree,
+    uplink: "child" | "thread" | "ancestors" | null,
+    bridge: "child" | "thread" | null,
+    prevThreadPos: number,
+  ): Generator<HTMLElement, void, unknown> {
     // If one of the replies to this toot is by the same account,
     // we have a starting or continued thread.
     const selfReply =
@@ -149,6 +153,10 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
       undefined;
     const [instance] = key.split("/", 1); // a bit hacky
     yield H("li",
+      el => {
+        if (uplink) el.classList.add(`uplink-${uplink}`);
+        if (bridge) el.classList.add(`bridge-${bridge}`);
+      },
       renderToot(
         toot, instance,
         linkConfigSig,
@@ -157,15 +165,21 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         threadPosMarker,
       ),
       children.length === 0 ? null : H("ul.toot-list",
-        children.map(child => descend(child)),
+        children.map((child, i) =>
+          descend(child, "child",
+            i < children.length - 1 ? "child" : selfReply ? "thread" : null,
+            0)
+        ),
       ),
     );
     if (selfReply) {
-      yield* descend(selfReply, threadPos);
+      yield* descend(selfReply, "thread", bridge, threadPos);
     }
   }
 
-  reRenderInto(descendantsEl, H("ul.toot-list", descend(tootTree)));
+  reRenderInto(descendantsEl, H("ul.toot-list",
+    descend(tootTree, details.ancestors.length > 0 ? "ancestors" : null, null, 0),
+  ));
 }
 
 function renderTootList(
@@ -285,7 +299,10 @@ async function renderDetails(details: DetailEntry) {
 
   renderAncestors(details, seenIdSignals);
   effect(() => {
-    switch (displayModeSig.value) {
+    const displayMode = displayModeSig.value;
+    tootTreeEl.classList.remove(...displayModes);
+    tootTreeEl.classList.add(displayMode);
+    switch (displayMode) {
       case "hierarchical": {
         renderTootTree(details, seenIdSignals);
         break;

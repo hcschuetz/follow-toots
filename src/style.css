@@ -147,8 +147,67 @@ body.tree {
       list-style: none;
     }
   }
-  ul.toot-list ul.toot-list {
-    padding-left: 2em;
+  ul.toot-list {
+    ul.toot-list {
+      padding-left: 2em;
+    }
+    > li {
+      position: relative;
+      /* TODO replace empirical lengths with calculated ones */
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0px;
+        bottom: 100%;
+        left: 0.91em;
+        border-left: 2px solid #333;
+      }
+      &.uplink-ancestors::before {
+        top: -16.5px;
+      }
+      &.uplink-thread::before {
+        top: -7px;
+      }
+      &.uplink-child::before {
+        content: "";
+        position: absolute;
+        top: calc(-1em - 8px);
+        left: -1.09em;
+        width: 2em;
+        height: 2em;
+        /* lower-left quarter circle: (idea stolen from phanpy.social) */
+        border-radius: 50%;
+        border: 2px solid transparent;
+        border-bottom-color: #333;
+        transform: rotate(45deg);
+      }
+
+      &.bridge-thread::after {
+        content: "";
+        position: absolute;
+        left: -1.1em;
+        top: -7px;
+        bottom: 0;
+        border-left: 2px solid #333;
+      }
+      &.bridge-child::after {
+        content: "";
+        position: absolute;
+        left: -1.1em;
+        top: -7px;
+        bottom: -1.5px;
+        border-left: 2px solid #333;
+      }
+    }
+  }
+
+  &.hierarchical #ancestors ul.toot-list > li {
+    &::before {
+      top: -7px;
+    }
+    &:first-child::before {
+      top: 0;
+    }
   }
 
   /*
