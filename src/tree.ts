@@ -277,6 +277,7 @@ async function renderDetails(details: DetailEntry) {
   }
   const statsList = [...statsMap.values()];
   statsList.sort((x, y) => y.n - x.n);
+  refill("#n-users", statsList.length.toString());
   refill("#user-stats", statsList.map(({n, account}) =>
     H("span",
       H("img", {
