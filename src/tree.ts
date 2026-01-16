@@ -121,20 +121,6 @@ new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 
 readLinkConfig();
 
-function renderChildrenMismatch(diff: number): HTMLElement | void {
-  if (diff) {
-    return H("li.children-mismatch",
-      `Mismatch: Found ${
-        Math.abs(diff)
-      } ${
-        Math.abs(diff) === 1 ? "child" : "children"
-      } ${
-        diff < 0 ? "less" : "more"
-      } than expected.`,
-    );
-  }
-}
-
 function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): void {
   const {key, root, descendants} = details;
 
@@ -172,7 +158,6 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
       ),
       children.length === 0 ? null : H("ul.toot-list",
         children.map(child => descend(child)),
-        renderChildrenMismatch(children.length + (selfReply ? 1 : 0) - toot.replies_count),
       ),
     );
     if (selfReply) {

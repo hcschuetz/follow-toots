@@ -145,15 +145,6 @@ body.tree {
     > li {
       margin: 0;
       list-style: none;
-      &.children-mismatch {
-        box-sizing: border-box;
-        max-width: var(--page-width);
-        border-radius: 0.5em;
-        margin: 0.5em 0;
-        padding: 5px 1em;
-        background-color: #ff0;
-        font-weight: bold;
-      }
     }
   }
   ul.toot-list ul.toot-list {
