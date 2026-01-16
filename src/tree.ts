@@ -275,10 +275,8 @@ async function renderDetails(details: DetailEntry) {
       statsMap.set(toot.account.acct, {n: 1, account: toot.account});
     }
   }
-  console.log(statsMap)
   const statsList = [...statsMap.values()];
   statsList.sort((x, y) => y.n - x.n);
-  console.log(statsList)
   refill("#user-stats", statsList.map(({n, account}) =>
     H("span",
       H("img", {
