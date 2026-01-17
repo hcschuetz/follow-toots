@@ -77,10 +77,6 @@ async function setSeenIdsSignal() {
   seenIdsSignal.value = (await db.get("treeOverview", key))?.seenIds;
 }
 
-const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
-const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
-const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
-
 async function markAllAsUnseen() {
   const overview = await db.get("treeOverview", key);
   if (!overview) return;
@@ -121,6 +117,10 @@ async function readLinkConfig() {
 new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 
 readLinkConfig();
+
+const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
+const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
+const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
 function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): void {
   const {key, root, descendants} = details;
