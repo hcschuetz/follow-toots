@@ -8,6 +8,7 @@ import { linkableFeatures, linkConfigConfig, type LinkableFeature } from "./link
 import sanitize from "./sanitize";
 import formatDate from "./formatDate";
 import "./DropDownMenu";
+import "./ContextMenu";
 
 export 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
@@ -24,7 +25,58 @@ function renderToot(
 
   const {account, poll, card} = toot;
 
+  function menuItems(el: HTMLElement) {
+    effect(() => {
+      const {value} = linkConfigSig;
+      reRenderInto(el, function*() {
+        for (const feature of ["status", "profile"] as const) {
+          const obj = value?.[feature] ?? {};
+          for (const k in obj) if (obj[k]) {
+            const frontend = linkConfigConfig[k];
+            const href = frontend.urlFunctions[feature](instance, toot);
+            yield H("button.open-link",
+              {onclick: () => window.open(href)},
+              H("img.link-icon", {src: frontend.icon}),
+              ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
+            );
+          }
+        }
+        // Omit this menu item if this toot is already the root?
+        yield H("button.follow-toot",
+          {onclick: () => {
+            const url = new URL("./tree.html", document.location.href);
+            url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
+            window.open(url);
+          }},
+          "Follow toot",
+        );
+      });
+    });
+  };
+
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
+    H("context-menu" as any,
+      H("button",
+        {onclick() {
+          toggleSeen();
+          setTimeout(() => {
+            tootEl.scrollIntoView({
+              // "start" would move it behind the sticky header
+              block: "center",
+              behavior: "smooth",
+            });
+          }, 100);
+        }},
+        el => {
+          effect(() => {
+            el.textContent = seenSig.value
+              ? "☐ Mark toot as unseen"
+              : "☑ Mark toot as seen";
+          });
+        }
+      ),
+      H("div.contents", menuItems),
+    ),
     H("div.toot-head",
       prefix,
       H("input.seen",
@@ -39,37 +91,7 @@ function renderToot(
           });
         }
       ),
-      H("drop-down-menu" as any,
-        el => {
-          effect(() => {
-            const {value} = linkConfigSig;
-            reRenderInto(el, function*() {
-              for (const feature of ["status", "profile"] as const) {
-                const obj = value?.[feature] ?? {};
-                for (const k in obj) if (obj[k]) {
-                  const frontend = linkConfigConfig[k];
-                  const href = frontend.urlFunctions[feature](instance, toot);
-                  yield H("button.open-link",
-                    {onclick: () => window.open(href)},
-                    H("img.link-icon", {src: frontend.icon}),
-                    ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
-                  );
-                }
-              }
-              // Omit this menu item if this toot is already the root?
-              yield H("button.follow-toot",
-                {onclick: () => {
-                  const url = new URL("./tree.html", document.location.href);
-                  url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
-                  console.log(url.toString());
-                  window.open(url);
-                }},
-                "Follow toot",
-              );
-            });
-          });
-        },
-      ),
+      H("drop-down-menu" as any, menuItems),
       H("span.visibility", toot.visibility),
       toot.edited_at ? [
         H("span.toot-created.line-through", formatDate(toot.created_at)),

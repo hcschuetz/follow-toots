@@ -1,0 +1,18 @@
+.context-menu {
+  position: fixed;
+  top: 100;
+  left: 100;
+  width: max-content;
+  z-index: 1000;
+  display: none;
+  list-style: none;
+  border-radius: 3px;
+  border: 1px solid #444;
+  padding: 2px;
+  background-color: #ccc;
+  &.open {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
