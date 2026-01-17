@@ -10,18 +10,25 @@ class DropDownMenu extends HTMLElement {
 
   constructor() {
     super();
-    let details: HTMLDetailsElement;
-    const shadowRoot = this.attachShadow({mode: "open"});
-    shadowRoot.adoptedStyleSheets.push(style);
-    shadowRoot.append(
-      details =
+    const details =
       H("details.menu",
         H("summary", "☰"),
         H("div.items",
           H("slot"),
         ),
-      ),
-    );
+      );
+    const shadowRoot = this.attachShadow({mode: "open"});
+    shadowRoot.adoptedStyleSheets.push(style);
+    shadowRoot.append(details);
+    details.ontoggle = () => {
+      if (details.open) {
+        details.onkeydown = ({key}) => {
+          if (key === "Escape") {
+            details.open = false;
+          }
+        }
+      }
+    }
 
     this.close = ev => {
       if (!details.open) return;
