@@ -317,11 +317,15 @@ body.tree {
       }
       ul.attachments {
         padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        gap: 1em;
+        list-style: none;
         > li.attachment {
           display: flex;
           flex-direction: column;
           align-items: start;
-          gap: 0.5em;
           img.preview {
             max-width: 100%;
             border: 1px solid #888;
