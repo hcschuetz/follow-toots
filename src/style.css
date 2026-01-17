@@ -157,6 +157,7 @@ body.tree {
       &::before {
         content: "";
         position: absolute;
+        /* This default top/bottom pair makes the height 0: */
         top: 0px;
         bottom: 100%;
         left: 0.91em;
@@ -169,34 +170,32 @@ body.tree {
         top: -7px;
       }
       &.uplink-child::before {
-        content: "";
-        position: absolute;
         top: calc(-1em - 8px);
+        bottom: auto;
         left: -1.09em;
         width: 2em;
         height: 2em;
         /* lower-left quarter circle: (idea stolen from phanpy.social) */
         border-radius: 50%;
         border: 2px solid transparent;
-        border-bottom-color: #333;
-        transform: rotate(45deg);
+        border-left-color: #333;
+        transform: rotate(-45deg);
       }
 
-      &.bridge-thread::after {
+      &::after {
         content: "";
         position: absolute;
         left: -1.1em;
         top: -7px;
         bottom: 0;
-        border-left: 2px solid #333;
+        border-left: 2px solid transparent;
+      }
+      &.bridge-thread::after {
+        border-left-color: #333;
       }
       &.bridge-child::after {
-        content: "";
-        position: absolute;
-        left: -1.1em;
-        top: -7px;
         bottom: -1.5px;
-        border-left: 2px solid #333;
+        border-left-color: #333;
       }
     }
   }
