@@ -118,6 +118,16 @@ new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 
 readLinkConfig();
 
+
+const contextMenuEl = document.querySelector<HTMLSelectElement>("#context-menu")!;
+const contextMenuSig = signal<"standard" | "custom">("standard");
+function updateContextMenu() {
+  contextMenuSig.value = contextMenuEl.value as "standard" | "custom";
+}
+contextMenuEl.addEventListener("change", updateContextMenu);
+updateContextMenu();
+
+
 const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
@@ -162,6 +172,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         linkConfigSig,
         toggleSeen(versionId(toot), key),
         seenIdSignals.get(versionId(toot))!,
+        contextMenuSig,
         threadPosMarker,
       ),
       children.length === 0 ? null : H("ul.toot-list",
@@ -197,6 +208,7 @@ function renderTootList(
             linkConfigSig,
             toggleSeen(versionId(toot), key),
             seenIdSignals.get(versionId(toot))!,
+            contextMenuSig,
           ),
         ),
       ),
@@ -254,6 +266,7 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
           toot, instance, linkConfigSig,
           toggleSeen(versionId(toot), key),
           seenIdSignals.get(versionId(toot))!,
+          contextMenuSig,
         )
       )),
     ),

@@ -6,6 +6,7 @@ style.replaceSync(styleRaw);
 
 export default
 class ContextMenu extends HTMLElement {
+  disabled = false;
   open: (ev: PointerEvent) => unknown;
   close: () => unknown;
 
@@ -18,6 +19,7 @@ class ContextMenu extends HTMLElement {
     shadowRoot.append(menu);
 
     this.open = ev => {
+      if (this.disabled) return;
       ev.preventDefault();
       menu.style.left = ev.clientX + "px";
       menu.style.top = ev.clientY + "px";

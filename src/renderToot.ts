@@ -20,6 +20,7 @@ function renderToot(
   linkConfigSig: Signal<LinkConfig | undefined>,
   toggleSeen: () => unknown,
   seenSig: Signal<boolean | undefined>,
+  contextMenuSig: Signal<"standard" | "custom">,
   prefix?: HTMLElement | string,
 ): HTMLElement {
 
@@ -56,6 +57,11 @@ function renderToot(
 
   const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
     H("context-menu" as any,
+      el => {
+        effect(() => {
+          el.disabled = contextMenuSig.value === "standard";
+        });
+      },
       H("button",
         {onclick() {
           toggleSeen();
