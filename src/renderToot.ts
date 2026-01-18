@@ -13,18 +13,23 @@ import "./ContextMenu";
 export 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
 
-export default
-function renderToot(
-  toot: Status,
+export
+type TootRenderingParams = {
   instance: string,
   linkConfigSig: Signal<LinkConfig | undefined>,
   toggleSeen: () => unknown,
   seenSig: Signal<boolean | undefined>,
   contextMenuSig: Signal<"standard" | "custom">,
   prefix?: HTMLElement | string,
-): HTMLElement {
+}
+
+export default
+function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
 
   const {account, poll, card} = toot;
+  const {
+    instance, linkConfigSig, toggleSeen, seenSig, contextMenuSig, prefix,
+  } = params;
 
   function menuItems(el: HTMLElement) {
     effect(() => {

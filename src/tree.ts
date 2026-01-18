@@ -170,14 +170,14 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         if (uplink) el.classList.add(`uplink-${uplink}`);
         if (bridge) el.classList.add(`bridge-${bridge}`);
       },
-      renderToot(
-        toot, instance,
+      renderToot(toot, {
+        instance,
         linkConfigSig,
-        toggleSeen(versionId(toot), key),
-        seenIdSignals.get(versionId(toot))!,
+        toggleSeen: toggleSeen(versionId(toot), key),
+        seenSig: seenIdSignals.get(versionId(toot))!,
         contextMenuSig,
-        threadPosMarker,
-      ),
+        prefix: threadPosMarker,
+      }),
       children.length === 0 ? null : H("ul.toot-list",
         children.map((child, i) =>
           descend(child, "child",
@@ -206,13 +206,13 @@ function renderTootList(
     H("ul.toot-list",
       [root, ...descendants].map(toot =>
         H("li",
-          renderToot(
-            toot, instance,
+          renderToot(toot, {
+            instance,
             linkConfigSig,
-            toggleSeen(versionId(toot), key),
-            seenIdSignals.get(versionId(toot))!,
+            toggleSeen: toggleSeen(versionId(toot), key),
+            seenSig: seenIdSignals.get(versionId(toot))!,
             contextMenuSig,
-          ),
+          }),
         ),
       ),
     ),
@@ -265,12 +265,13 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
   reRenderInto(ancestorsEl,
     H("ul.toot-list",
       details.ancestors.map(toot => H("li",
-        renderToot(
-          toot, instance, linkConfigSig,
-          toggleSeen(versionId(toot), key),
-          seenIdSignals.get(versionId(toot))!,
+        renderToot(toot, {
+          instance,
+          linkConfigSig,
+          toggleSeen: toggleSeen(versionId(toot), key),
+          seenSig: seenIdSignals.get(versionId(toot))!,
           contextMenuSig,
-        )
+        })
       )),
     ),
   );
