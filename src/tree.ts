@@ -120,7 +120,7 @@ readLinkConfig();
 
 
 const contextMenuEl = document.querySelector<HTMLSelectElement>("#context-menu")!;
-const contextMenuSig = signal<"standard" | "custom">("standard");
+const contextMenuSig = signal<"standard" | "custom">("custom");
 effect(() => {
   contextMenuEl.value = contextMenuSig.value;
 });
