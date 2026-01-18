@@ -11,6 +11,7 @@ import renderToot, { type LinkConfig } from './renderToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
 import type { Account } from './mastodon-entities';
+import { findCircular, findLastCircular } from './findCircular';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -130,6 +131,35 @@ function updateContextMenu() {
 contextMenuEl.addEventListener("change", updateContextMenu);
 updateContextMenu();
 
+function goToToot(to?: HTMLElement) {
+  if (!to) return;
+  to.scrollIntoView({
+    block: "center",
+    behavior: "smooth",
+  });
+  to.querySelector<HTMLElement>("input.seen")?.focus();
+}
+
+// We have to use a "provider function" getTootEl because we need the
+// extraMenuItems for rendering the toot, that is, at a time where the rendered
+// toot element does not yet exist.
+const extraMenuItems = (getTootEl: () => HTMLElement): HParam<HTMLElement> | undefined => [
+  H("button", "↓ Next unseen toot", {onclick() {
+    goToToot(findCircular(
+      document.querySelectorAll<HTMLElement>(".toot"),
+      getTootEl(),
+      el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
+    ))
+  }}),
+  H("button", "↑ Previous unseen toot", {onclick() {
+    goToToot(findLastCircular(
+      document.querySelectorAll(".toot"),
+      getTootEl(),
+      el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
+    ));
+  }}),
+];
+
 
 const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
@@ -177,6 +207,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         seenSig: seenIdSignals.get(versionId(toot))!,
         contextMenuSig,
         prefix: threadPosMarker,
+        extraMenuItems,
       }),
       children.length === 0 ? null : H("ul.toot-list",
         children.map((child, i) =>
@@ -212,6 +243,7 @@ function renderTootList(
             toggleSeen: toggleSeen(versionId(toot), key),
             seenSig: seenIdSignals.get(versionId(toot))!,
             contextMenuSig,
+            extraMenuItems,
           }),
         ),
       ),
@@ -271,6 +303,7 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
           toggleSeen: toggleSeen(versionId(toot), key),
           seenSig: seenIdSignals.get(versionId(toot))!,
           contextMenuSig,
+          extraMenuItems,
         })
       )),
     ),

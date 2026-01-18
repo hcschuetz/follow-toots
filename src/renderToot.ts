@@ -1,7 +1,7 @@
 import { effect, Signal } from "@preact/signals-core";
 
 import A_blank from "./A_blank";
-import H, { reRenderInto } from "./H";
+import H, { reRenderInto, type HParam } from "./H";
 import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
 import { linkableFeatures, linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
@@ -16,6 +16,7 @@ type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
 export
 type TootRenderingParams = {
   instance: string,
+  extraMenuItems: (getTootEl: () => HTMLElement) => HParam<HTMLElement>,
   linkConfigSig: Signal<LinkConfig | undefined>,
   toggleSeen: () => unknown,
   seenSig: Signal<boolean | undefined>,
@@ -28,13 +29,16 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
 
   const {account, poll, card} = toot;
   const {
-    instance, linkConfigSig, toggleSeen, seenSig, contextMenuSig, prefix,
+    instance, prefix,
+    toggleSeen, seenSig,
+    extraMenuItems, linkConfigSig, contextMenuSig,
   } = params;
 
   function menuItems(el: HTMLElement) {
     effect(() => {
       const {value} = linkConfigSig;
       reRenderInto(el, function*() {
+        yield extraMenuItems(() => tootEl);
         for (const feature of ["status", "profile"] as const) {
           const obj = value?.[feature] ?? {};
           for (const k in obj) if (obj[k]) {
