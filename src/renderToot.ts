@@ -67,6 +67,18 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
           }},
           "Follow toot",
         );
+        yield H("button",
+          el => {
+            effect(() => {
+              const otherContextMenu =
+                contextMenuSig.value === "standard" ? "custom" : "standard";
+              reRenderInto(el,
+                `Use ${otherContextMenu} context menu`,
+                {onclick() { contextMenuSig.value = otherContextMenu; }},
+              );
+            });
+          },
+        );
       });
     });
   };
@@ -103,10 +115,6 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
         }
       ),
       H("div.contents", menuItems),
-      H("button",
-        "Use standard context menu",
-        {onclick() { contextMenuSig.value = "standard"; }},
-      ),
     ),
     H("div.toot-head",
       prefix,
