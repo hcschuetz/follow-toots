@@ -140,6 +140,21 @@ function goToToot(to?: HTMLElement) {
   });
 }
 
+function nextToot(getTootEl: () => HTMLElement) {
+  const allToots = [...document.querySelectorAll<HTMLElement>(".toot")];
+  const i = allToots.findIndex(t => t === getTootEl());
+  if (i < 0) return;
+  goToToot(allToots[(i+1) % allToots.length]);
+}
+
+function previousToot(getTootEl: () => HTMLElement) {
+  const allToots = [...document.querySelectorAll<HTMLElement>(".toot")];
+  const n = allToots.length;
+  const i = allToots.findIndex(t => t === getTootEl());
+  if (i < 0) return;
+  goToToot(allToots[(i-1 + n) % n]);
+}
+
 function nextUnseen(getTootEl: () => HTMLElement) {
   goToToot(findCircular(
     document.querySelectorAll<HTMLElement>(".toot"),
@@ -160,8 +175,10 @@ function previousUnseen(getTootEl: () => HTMLElement) {
 // extraMenuItems for rendering the toot, that is, at a time where the rendered
 // toot element does not yet exist.
 const extraMenuItems = (getTootEl: () => HTMLElement): HParam<HTMLElement> | undefined => [
-  H("button", "➡️ Next unseen toot",     {onclick() { nextUnseen(getTootEl)      }}),
-  H("button", "⬅️ Previous unseen toot", {onclick() { previousUnseen(getTootEl); }}),
+  H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(getTootEl); }}),
+  H("button", "Previous toot (⬆️)"            , {onclick() { previousUnseen(getTootEl); }}),
+  H("button", "Next toot (⬇️)"                , {onclick() { nextUnseen(getTootEl)      }}),
+  H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(getTootEl)      }}),
 ];
 
 const tootKeyHandler =
@@ -169,11 +186,23 @@ const tootKeyHandler =
   (getTootEl: () => HTMLElement) =>
   (ev: KeyboardEvent) =>
 {
+  if (ev.shiftKey) return;
   switch (ev.key) {
-    case "ArrowRight": nextUnseen(getTootEl); break;
-    case "ArrowLeft": previousUnseen(getTootEl); break;
-    case "Enter": seenSig.value = !seenSig.value;
+    case "ArrowRight":
+      if (ev.ctrlKey) nextUnseen(getTootEl);
+      else nextToot(getTootEl);
+      break;
+    case "ArrowLeft":
+      if (ev.ctrlKey) previousUnseen(getTootEl);
+      else previousToot(getTootEl);
+      break;
+    case "Enter":
+      seenSig.value = !seenSig.value;
+      break;
+    default: return;
   }
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
 }
 
 

@@ -109,8 +109,8 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
         el => {
           effect(() => {
             el.textContent = seenSig.value
-              ? "☐ Mark toot as unseen"
-              : "☑ Mark toot as seen";
+              ? "☐ Mark toot as unseen (↩)"
+              : "☑ Mark toot as seen (↩)";
           });
         }
       ),
