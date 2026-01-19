@@ -96,14 +96,14 @@ async function markAllAsSeen() {
   updateSeen(overview);
 }
 
-const toggleSeen = (tootId: string, rootKey: string) => async () => {
+async function setSeen(tootId: string, rootKey: string, value: boolean) {
   const overview = await db.get("treeOverview", rootKey);
   if (!overview) return;
   const {seenIds} = overview;
-  if (seenIds.has(tootId)) {
-    seenIds.delete(tootId);
-  } else {
+  if (value) {
     seenIds.add(tootId);
+  } else {
+    seenIds.delete(tootId);
   }
   updateSeen(overview);
 };
@@ -133,32 +133,48 @@ updateContextMenu();
 
 function goToToot(to?: HTMLElement) {
   if (!to) return;
+  to.focus({preventScroll: true});
   to.scrollIntoView({
     block: "center",
     behavior: "smooth",
   });
-  to.querySelector<HTMLElement>("input.seen")?.focus();
+}
+
+function nextUnseen(getTootEl: () => HTMLElement) {
+  goToToot(findCircular(
+    document.querySelectorAll<HTMLElement>(".toot"),
+    getTootEl(),
+    el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
+  ))
+}
+
+function previousUnseen(getTootEl: () => HTMLElement) {
+  goToToot(findLastCircular(
+    document.querySelectorAll<HTMLElement>(".toot"),
+    getTootEl(),
+    el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
+  ))
 }
 
 // We have to use a "provider function" getTootEl because we need the
 // extraMenuItems for rendering the toot, that is, at a time where the rendered
 // toot element does not yet exist.
 const extraMenuItems = (getTootEl: () => HTMLElement): HParam<HTMLElement> | undefined => [
-  H("button", "↓ Next unseen toot", {onclick() {
-    goToToot(findCircular(
-      document.querySelectorAll<HTMLElement>(".toot"),
-      getTootEl(),
-      el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
-    ))
-  }}),
-  H("button", "↑ Previous unseen toot", {onclick() {
-    goToToot(findLastCircular(
-      document.querySelectorAll(".toot"),
-      getTootEl(),
-      el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
-    ));
-  }}),
+  H("button", "➡️ Next unseen toot",     {onclick() { nextUnseen(getTootEl)      }}),
+  H("button", "⬅️ Previous unseen toot", {onclick() { previousUnseen(getTootEl); }}),
 ];
+
+const tootKeyHandler =
+  (seenSig: Signal<boolean | undefined>) =>
+  (getTootEl: () => HTMLElement) =>
+  (ev: KeyboardEvent) =>
+{
+  switch (ev.key) {
+    case "ArrowRight": nextUnseen(getTootEl); break;
+    case "ArrowLeft": previousUnseen(getTootEl); break;
+    case "Enter": seenSig.value = !seenSig.value;
+  }
+}
 
 
 const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
@@ -195,6 +211,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
       prevThreadPos > 0 || selfReply ? H("span.thread-pos", `#${threadPos}`) :
       undefined;
     const [instance] = key.split("/", 1); // a bit hacky
+    const seenSig = seenIdSignals.get(versionId(toot))!;
     yield H("li",
       el => {
         if (uplink) el.classList.add(`uplink-${uplink}`);
@@ -202,9 +219,9 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
       },
       renderToot(toot, {
         instance,
+        keyHandler: tootKeyHandler(seenSig),
         linkConfigSig,
-        toggleSeen: toggleSeen(versionId(toot), key),
-        seenSig: seenIdSignals.get(versionId(toot))!,
+        seenSig,
         contextMenuSig,
         prefix: threadPosMarker,
         extraMenuItems,
@@ -235,18 +252,19 @@ function renderTootList(
   const [instance] = key.split("/", 1); // a bit hacky
   reRenderInto(descendantsEl,
     H("ul.toot-list",
-      [root, ...descendants].map(toot =>
-        H("li",
+      [root, ...descendants].map(toot => {
+        const seenSig = seenIdSignals.get(versionId(toot))!;
+        return H("li",
           renderToot(toot, {
             instance,
+            keyHandler: tootKeyHandler(seenSig),
             linkConfigSig,
-            toggleSeen: toggleSeen(versionId(toot), key),
-            seenSig: seenIdSignals.get(versionId(toot))!,
+            seenSig,
             contextMenuSig,
             extraMenuItems,
           }),
-        ),
-      ),
+        );
+      }),
     ),
   )
 }
@@ -296,16 +314,19 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
   const [instance] = key.split("/", 1); // a bit hacky
   reRenderInto(ancestorsEl,
     H("ul.toot-list",
-      details.ancestors.map(toot => H("li",
-        renderToot(toot, {
-          instance,
-          linkConfigSig,
-          toggleSeen: toggleSeen(versionId(toot), key),
-          seenSig: seenIdSignals.get(versionId(toot))!,
-          contextMenuSig,
-          extraMenuItems,
-        })
-      )),
+      details.ancestors.map(toot => {
+        const seenSig = seenIdSignals.get(versionId(toot))!;
+        return H("li",
+          renderToot(toot, {
+            instance,
+            keyHandler: tootKeyHandler(seenSig),
+            linkConfigSig,
+            seenSig,
+            contextMenuSig,
+            extraMenuItems,
+          })
+        );
+      }),
     ),
   );
 }
@@ -346,6 +367,11 @@ async function renderDetails(details: DetailEntry) {
       sig.value = seenIdsSignal.value?.has(id);
     }
   });
+  for (const [vId, sig] of seenIdSignals) {
+    effect(() => {
+      setSeen(vId, key, sig.value ?? false);
+    });
+  }
 
   renderAncestors(details, seenIdSignals);
   effect(() => {

@@ -10,15 +10,17 @@ import formatDate from "./formatDate";
 import "./DropDownMenu";
 import "./ContextMenu";
 
+// TODO simplify the API between tree rendering and toot rendering
+
 export 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
 
 export
 type TootRenderingParams = {
   instance: string,
+  keyHandler: (getTootEl: () => HTMLElement) => (ev: KeyboardEvent) => void,
   extraMenuItems: (getTootEl: () => HTMLElement) => HParam<HTMLElement>,
   linkConfigSig: Signal<LinkConfig | undefined>,
-  toggleSeen: () => unknown,
   seenSig: Signal<boolean | undefined>,
   contextMenuSig: Signal<"standard" | "custom">,
   prefix?: HTMLElement | string,
@@ -30,9 +32,14 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
   const {account, poll, card} = toot;
   const {
     instance, prefix,
-    toggleSeen, seenSig,
+    keyHandler,
+    seenSig,
     extraMenuItems, linkConfigSig, contextMenuSig,
   } = params;
+
+  function toggleSeen() {
+    seenSig.value = !seenSig.value;
+  }
 
   function menuItems(el: HTMLElement) {
     effect(() => {
@@ -64,7 +71,12 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
     });
   };
 
-  const tootEl = H("div", {className: `toot visibility-${toot.visibility}`},
+  const tootEl: HTMLElement = H("div",
+    {
+      className: `toot visibility-${toot.visibility}`,
+      tabIndex: 0,
+      onkeydown: keyHandler(() => tootEl),
+    },
     H("context-menu" as any,
       el => {
         effect(() => {
