@@ -227,7 +227,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
   function* descend(
     {toot, children}: SubTree,
     uplink: "child" | "thread" | "ancestors" | null,
-    bridge: "child" | "thread" | null,
+    bridge: boolean,
     prevThreadPos: number,
   ): Generator<HTMLElement, void, unknown> {
     // If one of the replies to this toot is by the same account,
@@ -244,7 +244,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
     yield H("li",
       el => {
         if (uplink) el.classList.add(`uplink-${uplink}`);
-        if (bridge) el.classList.add(`bridge-${bridge}`);
+        el.classList.add(bridge ? "bridge" : "no-bridge");
       },
       renderToot(toot, {
         instance,
@@ -256,11 +256,12 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         extraMenuItems,
       }),
       children.length === 0 ? null : H("ul.toot-list",
-        children.map((child, i) =>
-          descend(child, "child",
-            i < children.length - 1 ? "child" : selfReply ? "thread" : null,
-            0)
-        ),
+        children.map((child, i) => {
+          // Do we need to "bridge" the edge from the parent to a later sibling
+          // or a thread continuation?
+          const bridge = i < children.length - 1 || Boolean(selfReply);
+          return descend(child, "child", bridge, 0);
+        }),
       ),
     );
     if (selfReply) {
@@ -269,7 +270,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
   }
 
   reRenderInto(descendantsEl, H("ul.toot-list",
-    descend(tootTree, details.ancestors.length > 0 ? "ancestors" : null, null, 0),
+    descend(tootTree, details.ancestors.length > 0 ? "ancestors" : null, false, 0),
   ));
 }
 

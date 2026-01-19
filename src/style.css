@@ -12,8 +12,12 @@
   -moz-osx-font-smoothing: grayscale;
 
   --page-width: 800px;
-
-  accent-color: blue;
+  --toot-margin: 0.5em;
+  --negative-toot-margin: calc(0px - var(--toot-margin));
+  --level-indent: 2em;
+  --edge-indent: 1em;
+  --edge-width: 3px;
+  --edge-style: var(--edge-width) solid #333;
 }
 
 body:not(.tree) {
@@ -123,13 +127,11 @@ body.tree {
   background-color: #aaa;
 
   #ancestors {
-    padding: 0.2em 1em;
+    /* Apparently we need a little vertical padding so that the toot margins
+     * get some "resistance".
+     */
+    padding: 0.1px 1em;
     background-color: #888;
-
-    .more-ancestors {
-      margin-block: 0.5em;
-      padding-inline: 1em;
-    }
   }
 
   #descendants {
@@ -142,78 +144,67 @@ body.tree {
   ul.toot-list {
     margin: 0;
     padding: 0;
+    ul.toot-list {
+      padding-left: var(--level-indent);
+    }
     > li {
+      /* TODO Can we get rid of --edge-width here by using border-box?
+       * Or by using outlines instead of borders? */
+      /* Looks like we need the "+ 1px" to work around a round-off problem: */
+      --left-offset: calc(var(--edge-indent) - var(--edge-width) + 1px);
       margin: 0;
       list-style: none;
-    }
-  }
-  ul.toot-list {
-    ul.toot-list {
-      padding-left: 2em;
-    }
-    > li {
       position: relative;
-      /* TODO replace empirical lengths with calculated ones */
+
+      /* ::before is used to link a toot to its parent: */
       &::before {
         content: "";
         position: absolute;
-        /* This default top/bottom pair makes the height 0: */
-        top: 0px;
+        left: var(--left-offset);
         bottom: 100%;
-        left: 0.91em;
-        border-left: 2px solid #333;
+        border-left: var(--edge-style);
       }
       &.uplink-ancestors::before {
-        top: -16.5px;
+        top: calc(2 * var(--negative-toot-margin));
       }
       &.uplink-thread::before {
-        top: -7px;
+        top: var(--negative-toot-margin);
       }
       &.uplink-child::before {
-        top: calc(-1em - 8px);
+        top: var(--negative-toot-margin);
         bottom: auto;
-        left: -1.09em;
-        width: 2em;
-        height: 2em;
-        /* lower-left quarter circle: (idea stolen from phanpy.social) */
-        border-radius: 50%;
-        border: 2px solid transparent;
-        border-left-color: #333;
-        transform: rotate(-45deg);
+        left: calc(var(--left-offset) - var(--level-indent));
+        width: calc(var(--level-indent) - var(--edge-indent));
+        aspect-ratio: 1;
+        border-bottom-left-radius: 100%;
+        border-bottom: var(--edge-style);
       }
 
+      /* ::after is used to bridge links from later siblings or
+       * thread continuations to the parent: */
       &::after {
         content: "";
         position: absolute;
-        left: -1.1em;
-        top: -7px;
+        left: calc(var(--left-offset) - var(--level-indent));
+        top: var(--negative-toot-margin);
         bottom: 0;
-        border-left: 2px solid transparent;
+        border-left: var(--edge-style);
       }
-      &.bridge-thread::after {
-        border-left-color: #333;
-      }
-      &.bridge-child::after {
-        bottom: -1.5px;
-        border-left-color: #333;
+      &.no-bridge::after {
+        border-left-color: transparent;
       }
     }
   }
 
-  &.hierarchical #ancestors ul.toot-list > li {
-    &::before {
-      top: -7px;
-    }
-    &:first-child::before {
-      top: 0;
-    }
+  &.hierarchical #ancestors ul.toot-list > li:not(:first-child)::before {
+    top: var(--negative-toot-margin);
   }
 
   .toot {
     box-sizing: border-box;
     max-width: var(--page-width);
     border-radius: 0.5em;
-    margin: 0.5em 0;
+    margin: var(--toot-margin) 0;
     background-color: #ddd;
     &:focus {
       outline: 3px solid #333;
@@ -267,15 +258,6 @@ body.tree {
       background-color: #ff8;
     }
     /* TODO also distinguish visibility "private" from "direct"? */
-    summary {
-      margin-block: 0.5em;
-      border-radius: 4px;
-      padding: 2px 5px;
-      cursor: pointer;
-      font-size: smaller;
-      background-color: #000;
-      color: #fff;
-    }
     .toot-full-body {
       border-bottom-left-radius: 0.5em;
       border-bottom-right-radius: 0.5em;
