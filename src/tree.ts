@@ -7,10 +7,10 @@ import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
-import renderToot, { type LinkConfig } from './renderToot';
+import renderToot, { type LinkConfig, type TootRenderingParams } from './renderToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
-import type { Account } from './mastodon-entities';
+import type { Account, Status } from './mastodon-entities';
 import { findCircular, findLastCircular } from './findCircular';
 
 // The hash should have the format of a search query.
@@ -210,6 +210,14 @@ const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
+const tootMap = new Map<Status, HTMLElement>();
+
+function handleToot(toot: Status, params: TootRenderingParams): HTMLElement {
+  const tootEl = renderToot(toot, params);
+  tootMap.set(toot, tootEl);
+  return tootEl;
+}
+
 function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): void {
   const {key, root, descendants} = details;
 
@@ -246,7 +254,7 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         if (uplink) el.classList.add(`uplink-${uplink}`);
         el.classList.add(bridge ? "bridge" : "no-bridge");
       },
-      renderToot(toot, {
+      handleToot(toot, {
         instance,
         keyHandler: tootKeyHandler(seenSig),
         linkConfigSig,
@@ -285,7 +293,7 @@ function renderTootList(
       [root, ...descendants].map(toot => {
         const seenSig = seenIdSignals.get(versionId(toot))!;
         return H("li",
-          renderToot(toot, {
+          handleToot(toot, {
             instance,
             keyHandler: tootKeyHandler(seenSig),
             linkConfigSig,
@@ -347,7 +355,7 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
       details.ancestors.map(toot => {
         const seenSig = seenIdSignals.get(versionId(toot))!;
         return H("li",
-          renderToot(toot, {
+          handleToot(toot, {
             instance,
             keyHandler: tootKeyHandler(seenSig),
             linkConfigSig,
@@ -364,6 +372,8 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
 type SeenIdSignals = Map<string, Signal<boolean | undefined>>;
 
 async function renderDetails(details: DetailEntry) {
+  tootMap.clear();
+
   const {ancestors, root, descendants} = details;
 
   const statsMap = new Map<string, {n: number, account: Account}>();
@@ -423,6 +433,8 @@ async function renderDetails(details: DetailEntry) {
       }
     }
   });
+
+  goToToot(tootMap.get(root));
 }
 
 async function show(withDetails: boolean) {
