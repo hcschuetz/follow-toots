@@ -15,6 +15,8 @@ import { findCircular, findLastCircular } from './findCircular';
 import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 import ContextMenu from './ContextMenu';
 
+const db = await database;
+
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
 // unnecessary page fetches for varying parameters and also
@@ -32,7 +34,7 @@ try {
     params.set("instance", instance);
     params.set("id", id);
     window.history.replaceState({}, '', "#" + params);
-    if (!await (await database).get("treeOverview", `${instance}/${id}`)) {
+    if (!await db.get("treeOverview", `${instance}/${id}`)) {
       // no "await" => load tree in background:
       fetchTree(instance, id);
     }
@@ -74,25 +76,19 @@ setupNotifications<Notifications>("followToots", {
 });
 
 
-const db = await database;
+let overview: OverviewEntry | undefined;
+let details: DetailEntry | undefined;
 
 const seenIdsSignal = signal<Set<string> | undefined>(undefined, {name: "seenIds"});
 
-async function setSeenIdsSignal() {
-  seenIdsSignal.value = (await db.get("treeOverview", key))?.seenIds;
-}
-
 async function markAllAsUnseen() {
-  const overview = await db.get("treeOverview", key);
   if (!overview) return;
   overview.seenIds.clear();
   updateSeen(overview);
 }
 
 async function markAllAsSeen() {
-  const overview = await db.get("treeOverview", key);
   if (!overview) return;
-  const details = await db.get("treeDetails", key);
   if (!details) return;
   const {ancestors, root, descendants} = details;
   const {seenIds} = overview;
@@ -100,8 +96,7 @@ async function markAllAsSeen() {
   updateSeen(overview);
 }
 
-async function setSeen(tootId: string, rootKey: string, value: boolean) {
-  const overview = await db.get("treeOverview", rootKey);
+async function setSeen(tootId: string, value: boolean) {
   if (!overview) return;
   const {seenIds} = overview;
   if (value) {
@@ -280,8 +275,8 @@ function extractThreads(st: Tree): Thread {
   return thread;
 }
 
-function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): void {
-  const {root, descendants} = details;
+function renderTootTree(seenIdSignals: SeenIdSignals): void {
+  const {ancestors, root, descendants} = details!;
 
   // Building a recursive datastructure without recursion:
   // - Create subtree nodes for each toot and index them by an auxiliary map.
@@ -323,17 +318,14 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
   const topLIs = descend(tree, false);
   const rootLI = topLIs[0];
   rootLI.classList.remove("uplink-child");
-  if (details.ancestors.length > 0) {
+  if (ancestors.length > 0) {
     rootLI.classList.add("uplink-ancestors");
   }
   reRenderInto(descendantsEl, H("ul.toot-list", topLIs));
 }
 
-function renderTootList(
-  details: DetailEntry,
-  seenIdSignals: SeenIdSignals,
-) {
-  const {root, descendants} = details;
+function renderTootList(seenIdSignals: SeenIdSignals) {
+  const {root, descendants} = details!;
   reRenderInto(descendantsEl,
     H("ul.toot-list",
       [root, ...descendants].map(toot => {
@@ -364,20 +356,25 @@ function refill<E extends HTMLElement>(selectors: string, ...content: HParam<E>[
   reRenderInto(document.querySelector<E>(selectors)!, ...content);
 }
 
-function renderTreeHead(overview: OverviewEntry, instance: string, id: string) {
-  const {rootAuthor, rootAccountEmojis} = overview;
+function renderTreeHead() {
+  if (!overview) return;
+  const {
+    rootAuthor, rootAccountEmojis, rootAuthorAvatar, rootAcct,
+    rootCreatedAt, lastCreatedAt, lastRetrievalDate,
+    nToots, nUnseen,
+  } = overview;
   refill("#tree-head-name", rootAuthor ? emojify(rootAuthor, rootAccountEmojis) : key);
-  fill<HTMLImageElement>("#tree-head-avatar", { src: overview.rootAuthorAvatar });
-  refill("#tree-head-acct", overview.rootAcct ? `@${overview.rootAcct} on ${instance}` : "");
-  refill("#tree-head-date-from", formatDate(overview.rootCreatedAt));
-  refill("#tree-head-date-to", formatDate(overview.lastCreatedAt));
-  refill("#tree-head-date-fetched", formatDate(overview.lastRetrievalDate));
-  refill("#n-toots", overview.nToots?.toFixed() ?? "??");
-  refill("#n-unseen", overview.nUnseen?.toFixed() ?? "??");
+  fill<HTMLImageElement>("#tree-head-avatar", { src: rootAuthorAvatar });
+  refill("#tree-head-acct", rootAcct ? `@${rootAcct} on ${instance}` : "");
+  refill("#tree-head-date-from", formatDate(rootCreatedAt));
+  refill("#tree-head-date-to", formatDate(lastCreatedAt));
+  refill("#tree-head-date-fetched", formatDate(lastRetrievalDate));
+  refill("#n-toots", nToots?.toFixed() ?? "??");
+  refill("#n-unseen", nUnseen?.toFixed() ?? "??");
   fill("#all-seen", {"onclick": () => markAllAsSeen()});
   fill("#all-unseen", {"onclick": () => markAllAsUnseen()});
   fill("#reload", {"onclick": () => fetchTree(instance, id)});
-  fill("#remove", {"onclick": () => overview && deleteTree(overview)});
+  fill("#remove", {"onclick": () => deleteTree(overview!)});
   fill("#display-mode", {"onchange": ev =>
     displayModeSig.value = (ev.currentTarget as HTMLSelectElement).value as DisplayMode
   });
@@ -391,10 +388,10 @@ function renderUnfollowed(instance: string, id: string) {
   descendantsEl.replaceChildren(/* with nothing */);
 }
 
-function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
+function renderAncestors(seenIdSignals: SeenIdSignals) {
   reRenderInto(ancestorsEl,
     H("ul.toot-list",
-      details.ancestors.map(toot => {
+      details!.ancestors.map(toot => {
         const seenSig = seenIdSignals.get(versionId(toot))!;
         return H("li",
           handleToot(toot, {
@@ -410,11 +407,11 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
 
 type SeenIdSignals = Map<string, Signal<boolean | undefined>>;
 
-async function renderDetails(details: DetailEntry) {
+async function renderDetails() {
   allToots.length = 0;
   tootMap.clear();
 
-  const {ancestors, root, descendants} = details;
+  const {ancestors, root, descendants} = details!;
 
   const statsMap = new Map<string, {n: number, account: Account}>();
   for (const toot of [...ancestors, root, ...descendants]) {
@@ -449,22 +446,22 @@ async function renderDetails(details: DetailEntry) {
   });
   for (const [vId, sig] of seenIdSignals) {
     effect(() => {
-      setSeen(vId, key, sig.value ?? false);
+      setSeen(vId, sig.value ?? false);
     });
   }
 
-  renderAncestors(details, seenIdSignals);
+  renderAncestors(seenIdSignals);
   effect(() => {
     const displayMode = displayModeSig.value;
     tootTreeEl.classList.remove(...displayModes);
     tootTreeEl.classList.add(displayMode);
     switch (displayMode) {
       case "hierarchical": {
-        renderTootTree(details, seenIdSignals);
+        renderTootTree(seenIdSignals);
         break;
       }
       case "chronological": {
-        renderTootList(details, seenIdSignals);
+        renderTootList(seenIdSignals);
         break;
       }
       default: {
@@ -478,8 +475,8 @@ async function renderDetails(details: DetailEntry) {
 }
 
 async function show(withDetails: boolean) {
-  await setSeenIdsSignal();
-  const overview = await db.get("treeOverview", key);
+  overview = await db.get("treeOverview", key);
+  seenIdsSignal.value = overview?.seenIds;
   fill("#app", {hidden: !overview});
   fill("#not-following", {hidden: Boolean(overview)});
   if (!overview) {
@@ -490,15 +487,15 @@ async function show(withDetails: boolean) {
   document.title = `${overview.rootAuthor}: "${overview.teaser}"`;
   document.querySelector<HTMLLinkElement>("link[rel='shortcut icon']")!.href =
     overview.rootAuthorAvatar ?? "";
-  renderTreeHead(overview, instance, id);
+  renderTreeHead();
 
   if (withDetails) {
-    const details = await db.get("treeDetails", key);
+    details = await db.get("treeDetails", key);
     if (!details) {
       document.title = overview.rootAuthor ?? "Follow Toot";
       return;
     }
-    await renderDetails(details);
+    await renderDetails();
   }
 }
 
