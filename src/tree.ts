@@ -264,14 +264,14 @@ function extractFirstHit<T>(a: T[], pred: (t: T) => boolean): {found?: T, rest: 
   return i < 0 ? {rest: a} : {found: a[i], rest: a.toSpliced(i, 1)};
 }
 
-function extractThreads(st: Tree): Thread {
-  const accId = st.toot.account.id;
+function extractThreads(tree: Tree): Thread {
+  const accId = tree.toot.account.id;
   const thread: Thread = [];
-  for (let t: Tree | undefined = st; t;) {
+  for (let subtree: Tree | undefined = tree; subtree;) {
     const {found, rest}: {found?: Tree, rest: Tree[]} =
-      extractFirstHit(t.children, child => child.toot.account.id === accId);
-    thread.push({toot: t.toot, children: rest.map(extractThreads)});
-    t = found;
+      extractFirstHit(subtree.children, child => child.toot.account.id === accId);
+    thread.push({toot: subtree.toot, children: rest.map(extractThreads)});
+    subtree = found;
   }
   return thread;
 }
