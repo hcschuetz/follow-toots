@@ -27,7 +27,7 @@ class ContextMenu extends HTMLElement {
       menu.style.top = ev.clientY + "px";
       menu.classList.add("open");
       menu.focus();
-      menu.onkeydown = ({key}) => {if (key === "Escape") this.close();},
+      menu.onkeydown = ({key}) => {if (key === "Escape") this.close();};
       document.addEventListener("click", this.close);
       // I'd like to close the context menu with a right click.
       //     document.addEventListener("contextmenu", this.close);
