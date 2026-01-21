@@ -12,7 +12,7 @@ import formatDate from './formatDate';
 import versionId from './versionId';
 import type { Account, Status } from './mastodon-entities';
 import { findCircular, findLastCircular } from './findCircular';
-import { linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
+import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -191,10 +191,10 @@ const menuItems = (toot: Status): HParam => () => [
   H("div.contents",
     el => {
       effect(() => {
+        const linkConfig = linkConfigSig.value;
+        if (!linkConfig) return;
         reRenderInto(el, function*() {
-          const linkConfig = linkConfigSig.value;
-          if (!linkConfig) return;
-          for (const feature of ["status", "profile"] as const) {
+          for (const feature of linkableFeatureKeys) {
             const obj = linkConfig[feature];
             for (const k in obj) if (obj[k]) {
               const frontend = linkConfigConfig[k];
@@ -207,7 +207,7 @@ const menuItems = (toot: Status): HParam => () => [
             }
           }
         });
-      })
+      });
     },
   ),
   // Omit this menu item if this toot is already the root?

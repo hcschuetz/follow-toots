@@ -9,6 +9,9 @@ const linkableFeatures = {
 export
 type LinkableFeature = keyof typeof linkableFeatures;
 
+export
+const linkableFeatureKeys = Object.keys(linkableFeatures) as LinkableFeature[];
+
 type ClientLinkConfig = {
   name: (instance: string) => string;
   icon: string;
