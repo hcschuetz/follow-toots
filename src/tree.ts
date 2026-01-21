@@ -126,11 +126,9 @@ new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 readLinkConfig();
 
 
-const contextMenuEl = document.querySelector<HTMLSelectElement>("#context-menu")!;
+const contextMenuEl = document.querySelector<HTMLInputElement>("#context-menu")!;
 {
-  function propagate() {
-    ContextMenu.disabled = contextMenuEl.value === "standard";
-  }
+  function propagate() { ContextMenu.disabled = !contextMenuEl.checked; }
   contextMenuEl.onchange = propagate;
   propagate();
 }
