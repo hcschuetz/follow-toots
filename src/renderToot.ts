@@ -23,7 +23,7 @@ type TootRenderingParams = {
   linkConfigSig: Signal<LinkConfig | undefined>,
   seenSig: Signal<boolean | undefined>,
   contextMenuSig: Signal<"standard" | "custom">,
-  prefix?: HTMLElement | string,
+  prefix?: HParam<HTMLElement>,
 }
 
 export default

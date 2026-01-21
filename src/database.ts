@@ -21,9 +21,6 @@ interface OverviewEntry {
   nUnseen?: number;
 };
 
-export
-type SubTree = {toot: Status, children: SubTree[]};
-
 export interface DetailEntry {
   key: string;
   root: Status;

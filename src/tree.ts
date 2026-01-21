@@ -2,7 +2,7 @@ import { effect, Signal, signal } from '@preact/signals-core';
 
 import { deleteTree, fetchTree, updateSeen } from './actions';
 import H, { renderInto, reRenderInto, type HParam } from './H';
-import database, { type DetailEntry, type OverviewEntry, type SubTree } from './database';
+import database, { type DetailEntry, type OverviewEntry } from './database';
 import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
@@ -218,68 +218,87 @@ function handleToot(toot: Status, params: TootRenderingParams): HTMLElement {
   return tootEl;
 }
 
+
+type Tree = {toot: Status, children: Tree[]};
+
+/** A thread with replies to the thread's toots.
+ *
+ * The replies are again grouped into threads.
+ * 
+ * Even toots that would not be considered parts of a thread are in a `Thread`,
+ * namely one with a single element.
+ */
+type Thread = {toot: Status, children: Thread[]}[];
+
+function extractFirstHit<T>(a: T[], pred: (t: T) => boolean): {found?: T, rest: T[]} {
+  const i = a.findIndex(pred);
+  return i < 0 ? {rest: a} : {found: a[i], rest: a.toSpliced(i, 1)};
+}
+
+function extractThreads(st: Tree): Thread {
+  const accId = st.toot.account.id;
+  const thread: Thread = [];
+  for (let t: Tree | undefined = st; t;) {
+    const {found, rest}: {found?: Tree, rest: Tree[]} =
+      extractFirstHit(t.children, child => child.toot.account.id === accId);
+    thread.push({toot: t.toot, children: rest.map(extractThreads)});
+    t = found;
+  }
+  return thread;
+}
+
 function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): void {
   const {key, root, descendants} = details;
 
   // Building a recursive datastructure without recursion:
   // - Create subtree nodes for each toot and index them by an auxiliary map.
   // - Then add reverse pointers to the `in_reply_to_id` pointers of toots.
-  const id2subTree = new Map([root, ...descendants].map(toot =>
-    [toot.id, {toot, children: [] as SubTree[]}]
+  const id2subTree = new Map<string, Tree>([root, ...descendants].map(toot =>
+    [toot.id, {toot, children: [] as Tree[]}]
   ));
   for (const toot of descendants) {
     id2subTree.get(toot.in_reply_to_id!)?.children.push(id2subTree.get(toot.id)!);
   }
-  const tootTree = id2subTree.get(root.id)!;
+  // ... but extracting threads is recursive:
+  const tree = extractThreads(id2subTree.get(root.id)!);
 
-  function* descend(
-    {toot, children}: SubTree,
-    uplink: "child" | "thread" | "ancestors" | null,
-    bridge: boolean,
-    prevThreadPos: number,
-  ): Generator<HTMLElement, void, unknown> {
-    // If one of the replies to this toot is by the same account,
-    // we have a starting or continued thread.
-    const selfReply =
-      children.find(child => child.toot.account.id === toot.account.id);
-    children = children.filter(child => child !== selfReply);
-    const threadPos = prevThreadPos + 1;
-    const threadPosMarker =
-      prevThreadPos > 0 || selfReply ? H("span.thread-pos", `#${threadPos}`) :
-      undefined;
-    const [instance] = key.split("/", 1); // a bit hacky
-    const seenSig = seenIdSignals.get(versionId(toot))!;
-    yield H("li",
-      el => {
-        if (uplink) el.classList.add(`uplink-${uplink}`);
-        el.classList.add(bridge ? "bridge" : "no-bridge");
-      },
-      handleToot(toot, {
-        instance,
-        keyHandler: tootKeyHandler(seenSig),
-        linkConfigSig,
-        seenSig,
-        contextMenuSig,
-        prefix: threadPosMarker,
-        extraMenuItems,
-      }),
-      children.length === 0 ? null : H("ul.toot-list",
-        children.map((child, i) => {
-          // Do we need to "bridge" the edge from the parent to a later sibling
-          // or a thread continuation?
-          const bridge = i < children.length - 1 || Boolean(selfReply);
-          return descend(child, "child", bridge, 0);
+  const [instance] = key.split("/", 1); // a bit hacky
+
+  function descend(thread: Thread, bridge: boolean): HTMLElement[] {
+    return thread.map(({toot, children}, i) => {
+      const seenSig = seenIdSignals.get(versionId(toot))!;
+      return H("li",
+        el => {
+          el.classList.add(i === 0 ? "uplink-child" : "uplink-thread");
+          el.classList.add(bridge ? "bridge" : "no-bridge");
+        },
+        handleToot(toot, {
+          instance,
+          keyHandler: tootKeyHandler(seenSig),
+          linkConfigSig,
+          seenSig,
+          contextMenuSig,
+          prefix:
+            thread.length === 1 ? undefined :
+            H("span.thread-pos", `${i+1}/${thread.length}`),
+          extraMenuItems,
         }),
-      ),
-    );
-    if (selfReply) {
-      yield* descend(selfReply, "thread", bridge, threadPos);
-    }
+        children.length === 0 ? null : H("ul.toot-list",
+          children.map((childThread, j) =>
+            descend(childThread, i < thread.length - 1 || j < children.length - 1)
+          ),
+        ),
+      );
+    });
   }
 
-  reRenderInto(descendantsEl, H("ul.toot-list",
-    descend(tootTree, details.ancestors.length > 0 ? "ancestors" : null, false, 0),
-  ));
+  const topLIs = descend(tree, false);
+  const rootLI = topLIs[0];
+  rootLI.classList.remove("uplink-child");
+  if (details.ancestors.length > 0) {
+    rootLI.classList.add("uplink-ancestors");
+  }
+  reRenderInto(descendantsEl, H("ul.toot-list", topLIs));
 }
 
 function renderTootList(
