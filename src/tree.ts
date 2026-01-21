@@ -80,6 +80,7 @@ let overview: OverviewEntry | undefined;
 let details: DetailEntry | undefined;
 
 const seenIdsSignal = signal<Set<string> | undefined>(undefined, {name: "seenIds"});
+let seenIdSignals: Map<string, Signal<boolean | undefined>> | undefined;
 
 async function markAllAsUnseen() {
   if (!overview) return;
@@ -275,7 +276,7 @@ function extractThreads(st: Tree): Thread {
   return thread;
 }
 
-function renderTootTree(seenIdSignals: SeenIdSignals): void {
+function renderTootTree(): void {
   const {ancestors, root, descendants} = details!;
 
   // Building a recursive datastructure without recursion:
@@ -292,7 +293,7 @@ function renderTootTree(seenIdSignals: SeenIdSignals): void {
 
   function descend(thread: Thread, bridge: boolean): HTMLElement[] {
     return thread.map(({toot, children}, i) => {
-      const seenSig = seenIdSignals.get(versionId(toot))!;
+      const seenSig = seenIdSignals!.get(versionId(toot))!;
       return H("li",
         el => {
           el.classList.add(i === 0 ? "uplink-child" : "uplink-thread");
@@ -324,12 +325,12 @@ function renderTootTree(seenIdSignals: SeenIdSignals): void {
   reRenderInto(descendantsEl, H("ul.toot-list", topLIs));
 }
 
-function renderTootList(seenIdSignals: SeenIdSignals) {
+function renderTootList() {
   const {root, descendants} = details!;
   reRenderInto(descendantsEl,
     H("ul.toot-list",
       [root, ...descendants].map(toot => {
-        const seenSig = seenIdSignals.get(versionId(toot))!;
+        const seenSig = seenIdSignals!.get(versionId(toot))!;
         return H("li",
           handleToot(toot, {
             keyHandler: tootKeyHandler(toot, seenSig),
@@ -388,11 +389,11 @@ function renderUnfollowed() {
   descendantsEl.replaceChildren(/* with nothing */);
 }
 
-function renderAncestors(seenIdSignals: SeenIdSignals) {
+function renderAncestors() {
   reRenderInto(ancestorsEl,
     H("ul.toot-list",
       details!.ancestors.map(toot => {
-        const seenSig = seenIdSignals.get(versionId(toot))!;
+        const seenSig = seenIdSignals!.get(versionId(toot))!;
         return H("li",
           handleToot(toot, {
             keyHandler: tootKeyHandler(toot, seenSig),
@@ -405,7 +406,6 @@ function renderAncestors(seenIdSignals: SeenIdSignals) {
   );
 }
 
-type SeenIdSignals = Map<string, Signal<boolean | undefined>>;
 
 async function renderDetails() {
   allToots.length = 0;
@@ -435,12 +435,11 @@ async function renderDetails() {
     )
   ));
 
-  const seenIdSignals: SeenIdSignals =
-    new Map([...ancestors, root, ...descendants].map(toot =>
-      [versionId(toot), signal<boolean>()]
-    ));
+  seenIdSignals = new Map([...ancestors, root, ...descendants].map(toot =>
+    [versionId(toot), signal<boolean>()]
+  ));
   effect(() => {
-    for (const [id, sig] of seenIdSignals) {
+    for (const [id, sig] of seenIdSignals!) {
       sig.value = seenIdsSignal.value?.has(id);
     }
   });
@@ -450,18 +449,18 @@ async function renderDetails() {
     });
   }
 
-  renderAncestors(seenIdSignals);
+  renderAncestors();
   effect(() => {
     const displayMode = displayModeSig.value;
     tootTreeEl.classList.remove(...displayModes);
     tootTreeEl.classList.add(displayMode);
     switch (displayMode) {
       case "hierarchical": {
-        renderTootTree(seenIdSignals);
+        renderTootTree();
         break;
       }
       case "chronological": {
-        renderTootList(seenIdSignals);
+        renderTootList();
         break;
       }
       default: {
