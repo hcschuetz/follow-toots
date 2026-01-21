@@ -131,6 +131,10 @@ function updateContextMenu() {
 contextMenuEl.addEventListener("change", updateContextMenu);
 updateContextMenu();
 
+
+const allToots = new Array<Status>();
+const tootMap = new Map<Status, HTMLElement>();
+
 function goToToot(toot?: Status) {
   if (!toot) return;
   const to = tootMap.get(toot);
@@ -143,14 +147,12 @@ function goToToot(toot?: Status) {
 }
 
 function nextToot(toot: Status) {
-  const allToots = [...tootMap.keys()];
   const i = allToots.findIndex(t => t === toot);
   if (i < 0) return;
   goToToot(allToots[(i+1) % allToots.length]);
 }
 
 function previousToot(toot: Status) {
-  const allToots = [...tootMap.keys()];
   const n = allToots.length;
   const i = allToots.findIndex(t => t === toot);
   if (i < 0) return;
@@ -159,7 +161,7 @@ function previousToot(toot: Status) {
 
 function nextUnseen(toot: Status) {
   goToToot(findCircular(
-    [...tootMap.keys()],
+    allToots,
     toot,
     t => !seenIdsSignal.value?.has(versionId(t)),
   ))
@@ -167,7 +169,7 @@ function nextUnseen(toot: Status) {
 
 function previousUnseen(toot: Status) {
   goToToot(findLastCircular(
-    [...tootMap.keys()],
+    allToots,
     toot,
     t => !seenIdsSignal.value?.has(versionId(t)),
   ))
@@ -205,10 +207,9 @@ const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
-const tootMap = new Map<Status, HTMLElement>();
-
 function handleToot(toot: Status, params: TootRenderingParams): HTMLElement {
   const tootEl = renderToot(toot, params);
+  allToots.push(toot);
   tootMap.set(toot, tootEl);
   return tootEl;
 }
@@ -386,6 +387,7 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
 type SeenIdSignals = Map<string, Signal<boolean | undefined>>;
 
 async function renderDetails(details: DetailEntry) {
+  allToots.length = 0;
   tootMap.clear();
 
   const {ancestors, root, descendants} = details;
