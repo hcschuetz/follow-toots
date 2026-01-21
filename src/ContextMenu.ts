@@ -6,7 +6,12 @@ style.replaceSync(styleRaw);
 
 export default
 class ContextMenu extends HTMLElement {
-  /** This is static because we want to disable/enable all instances at once. */
+  /** static so that we can disable/enable all instances at once.
+   * 
+   * (I'd prefer to propagate the flag to individual instances via CSS and to
+   * extract it here with `this.computedStyleMap` but the latter is not
+   * implemented by Firefox.)
+   */
   static disabled = false;
 
   open: (ev: PointerEvent) => unknown;
