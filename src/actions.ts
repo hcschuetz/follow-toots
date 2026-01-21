@@ -14,7 +14,7 @@ const notify = setupNotifications<Notifications>("followToots", {
   },
 
   async updatedTree(key) {
-    console.log("data", await db.get("treeDetails", key));
+    console.log("details", await db.get("treeDetails", key));
   },
 
   async deletedTree(key) {
