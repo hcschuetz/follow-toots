@@ -371,10 +371,10 @@ function renderTreeHead() {
   refill("#tree-head-date-fetched", formatDate(lastRetrievalDate));
   refill("#n-toots", nToots?.toFixed() ?? "??");
   refill("#n-unseen", nUnseen?.toFixed() ?? "??");
-  fill("#all-seen", {"onclick": () => markAllAsSeen()});
-  fill("#all-unseen", {"onclick": () => markAllAsUnseen()});
-  fill("#reload", {"onclick": () => fetchTree(instance, id)});
-  fill("#remove", {"onclick": () => deleteTree(overview!)});
+  fill("#all-seen", {onclick: () => markAllAsSeen()});
+  fill("#all-unseen", {onclick: () => markAllAsUnseen()});
+  fill("#reload", {onclick: () => fetchTree(instance, id)});
+  fill("#remove", {onclick: () => deleteTree(overview!)});
   fill("#display-mode", {"onchange": ev =>
     displayModeSig.value = (ev.currentTarget as HTMLSelectElement).value as DisplayMode
   });
@@ -383,7 +383,7 @@ function renderTreeHead() {
 function renderUnfollowed(instance: string, id: string) {
   refill("#toot-id", id);
   refill("#toot-instance", instance);
-  fill("#follow", {"onclick": () => fetchTree(instance, id)});
+  fill("#follow", {onclick: () => fetchTree(instance, id)});
   ancestorsEl.replaceChildren(/* with nothing */);
   descendantsEl.replaceChildren(/* with nothing */);
 }
