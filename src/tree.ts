@@ -180,11 +180,7 @@ const extraMenuItems = (toot: Status): HParam<HTMLElement> | undefined => [
   H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(toot)      }}),
 ];
 
-const tootKeyHandler =
-  (seenSig: Signal<boolean | undefined>) =>
-  (toot: Status) =>
-  (ev: KeyboardEvent) =>
-{
+const tootKeyHandler = (toot: Status, seenSig: Signal<boolean | undefined>) => (ev: KeyboardEvent) => {
   if (ev.shiftKey) return;
   switch (ev.key) {
     case "ArrowRight":
@@ -273,14 +269,14 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         },
         handleToot(toot, {
           instance,
-          keyHandler: tootKeyHandler(seenSig),
+          keyHandler: tootKeyHandler(toot, seenSig),
           linkConfigSig,
           seenSig,
           contextMenuSig,
           prefix:
             thread.length === 1 ? undefined :
             H("span.thread-pos", `${i+1}/${thread.length}`),
-          extraMenuItems,
+          extraMenuItems: extraMenuItems(toot),
         }),
         children.length === 0 ? null : H("ul.toot-list",
           children.map((childThread, j) =>
@@ -313,11 +309,11 @@ function renderTootList(
         return H("li",
           handleToot(toot, {
             instance,
-            keyHandler: tootKeyHandler(seenSig),
+            keyHandler: tootKeyHandler(toot, seenSig),
             linkConfigSig,
             seenSig,
             contextMenuSig,
-            extraMenuItems,
+            extraMenuItems: extraMenuItems(toot),
           }),
         );
       }),
@@ -375,11 +371,11 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
         return H("li",
           handleToot(toot, {
             instance,
-            keyHandler: tootKeyHandler(seenSig),
+            keyHandler: tootKeyHandler(toot, seenSig),
             linkConfigSig,
             seenSig,
             contextMenuSig,
-            extraMenuItems,
+            extraMenuItems: extraMenuItems(toot),
           })
         );
       }),
