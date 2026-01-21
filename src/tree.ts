@@ -131,7 +131,9 @@ function updateContextMenu() {
 contextMenuEl.addEventListener("change", updateContextMenu);
 updateContextMenu();
 
-function goToToot(to?: HTMLElement) {
+function goToToot(toot?: Status) {
+  if (!toot) return;
+  const to = tootMap.get(toot);
   if (!to) return;
   to.focus({preventScroll: true});
   to.scrollIntoView({
@@ -140,61 +142,58 @@ function goToToot(to?: HTMLElement) {
   });
 }
 
-function nextToot(getTootEl: () => HTMLElement) {
-  const allToots = [...document.querySelectorAll<HTMLElement>(".toot")];
-  const i = allToots.findIndex(t => t === getTootEl());
+function nextToot(toot: Status) {
+  const allToots = [...tootMap.keys()];
+  const i = allToots.findIndex(t => t === toot);
   if (i < 0) return;
   goToToot(allToots[(i+1) % allToots.length]);
 }
 
-function previousToot(getTootEl: () => HTMLElement) {
-  const allToots = [...document.querySelectorAll<HTMLElement>(".toot")];
+function previousToot(toot: Status) {
+  const allToots = [...tootMap.keys()];
   const n = allToots.length;
-  const i = allToots.findIndex(t => t === getTootEl());
+  const i = allToots.findIndex(t => t === toot);
   if (i < 0) return;
   goToToot(allToots[(i-1 + n) % n]);
 }
 
-function nextUnseen(getTootEl: () => HTMLElement) {
+function nextUnseen(toot: Status) {
   goToToot(findCircular(
-    document.querySelectorAll<HTMLElement>(".toot"),
-    getTootEl(),
-    el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
+    [...tootMap.keys()],
+    toot,
+    t => !seenIdsSignal.value?.has(versionId(t)),
   ))
 }
 
-function previousUnseen(getTootEl: () => HTMLElement) {
+function previousUnseen(toot: Status) {
   goToToot(findLastCircular(
-    document.querySelectorAll<HTMLElement>(".toot"),
-    getTootEl(),
-    el => el.querySelector<HTMLElement>("input.seen:not(:checked)"),
+    [...tootMap.keys()],
+    toot,
+    t => !seenIdsSignal.value?.has(versionId(t)),
   ))
 }
 
-// We have to use a "provider function" getTootEl because we need the
-// extraMenuItems for rendering the toot, that is, at a time where the rendered
-// toot element does not yet exist.
-const extraMenuItems = (getTootEl: () => HTMLElement): HParam<HTMLElement> | undefined => [
-  H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(getTootEl); }}),
-  H("button", "Previous toot (⬆️)"            , {onclick() { previousUnseen(getTootEl); }}),
-  H("button", "Next toot (⬇️)"                , {onclick() { nextUnseen(getTootEl)      }}),
-  H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(getTootEl)      }}),
+const extraMenuItems = (toot: Status): HParam<HTMLElement> | undefined => [
+  H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(toot); }}),
+  H("button", "Previous toot (⬆️)"            , {onclick() { previousUnseen(toot); }}),
+  H("button", "Next toot (⬇️)"                , {onclick() { nextUnseen(toot)      }}),
+  H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(toot)      }}),
 ];
 
 const tootKeyHandler =
   (seenSig: Signal<boolean | undefined>) =>
-  (getTootEl: () => HTMLElement) =>
+  (toot: Status) =>
   (ev: KeyboardEvent) =>
 {
   if (ev.shiftKey) return;
   switch (ev.key) {
     case "ArrowRight":
-      if (ev.ctrlKey) nextUnseen(getTootEl);
-      else nextToot(getTootEl);
+      if (ev.ctrlKey) nextUnseen(toot);
+      else nextToot(toot);
       break;
     case "ArrowLeft":
-      if (ev.ctrlKey) previousUnseen(getTootEl);
-      else previousToot(getTootEl);
+      if (ev.ctrlKey) previousUnseen(toot);
+      else previousToot(toot);
       break;
     case "Enter":
       seenSig.value = !seenSig.value;
@@ -453,7 +452,7 @@ async function renderDetails(details: DetailEntry) {
     }
   });
 
-  goToToot(tootMap.get(root));
+  goToToot(root);
 }
 
 async function show(withDetails: boolean) {

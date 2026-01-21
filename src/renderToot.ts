@@ -18,8 +18,8 @@ type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
 export
 type TootRenderingParams = {
   instance: string,
-  keyHandler: (getTootEl: () => HTMLElement) => (ev: KeyboardEvent) => void,
-  extraMenuItems: (getTootEl: () => HTMLElement) => HParam<HTMLElement>,
+  keyHandler: (toot: Status) => (ev: KeyboardEvent) => void,
+  extraMenuItems: (toot: Status) => HParam<HTMLElement>,
   linkConfigSig: Signal<LinkConfig | undefined>,
   seenSig: Signal<boolean | undefined>,
   contextMenuSig: Signal<"standard" | "custom">,
@@ -45,7 +45,7 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
     effect(() => {
       const {value} = linkConfigSig;
       reRenderInto(el, function*() {
-        yield extraMenuItems(() => tootEl);
+        yield extraMenuItems(toot);
         for (const feature of ["status", "profile"] as const) {
           const obj = value?.[feature] ?? {};
           for (const k in obj) if (obj[k]) {
@@ -87,7 +87,7 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
     {
       className: `toot visibility-${toot.visibility}`,
       tabIndex: 0,
-      onkeydown: keyHandler(() => tootEl),
+      onkeydown: keyHandler(toot),
     },
     H("context-menu" as any,
       el => {
