@@ -7,7 +7,7 @@ import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
-import renderToot, { type TootRenderingParams } from './renderToot';
+import renderToot from './renderToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
 import type { Account, Status } from './mastodon-entities';
@@ -78,35 +78,23 @@ setupNotifications<Notifications>("followToots", {
 
 let overview: OverviewEntry | undefined;
 let details: DetailEntry | undefined;
+let allToots: Status[] = [];
+const seenSignals = new Map<string, Signal<boolean>>();
 
-const seenIdsSignal = signal<Set<string> | undefined>(undefined, {name: "seenIds"});
-let seenIdSignals: Map<string, Signal<boolean | undefined>> | undefined;
 
 async function markAllAsUnseen() {
   if (!overview) return;
-  overview.seenIds.clear();
-  updateSeen(overview);
+  updateSeen({...overview, seenIds: new Set()});
 }
 
 async function markAllAsSeen() {
   if (!overview) return;
   if (!details) return;
-  const {ancestors, root, descendants} = details;
-  const {seenIds} = overview;
-  [...ancestors, root, ...descendants].forEach(toot => seenIds.add(versionId(toot)));
-  updateSeen(overview);
+  updateSeen({
+    ...overview,
+    seenIds: new Set(allToots.map(toot => versionId(toot))),
+  });
 }
-
-async function setSeen(tootId: string, value: boolean) {
-  if (!overview) return;
-  const {seenIds} = overview;
-  if (value) {
-    seenIds.add(tootId);
-  } else {
-    seenIds.delete(tootId);
-  }
-  updateSeen(overview);
-};
 
 type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
 
@@ -130,7 +118,6 @@ const contextMenuEl = document.querySelector<HTMLInputElement>("#context-menu")!
 }
 
 
-const allToots = new Array<Status>();
 const tootMap = new Map<Status, HTMLElement>();
 
 function goToToot(toot?: Status) {
@@ -161,7 +148,7 @@ function nextUnseen(toot: Status) {
   goToToot(findCircular(
     allToots,
     toot,
-    t => !seenIdsSignal.value?.has(versionId(t)),
+    t => !seenSignals.get(versionId(t))?.value,
   ))
 }
 
@@ -169,7 +156,7 @@ function previousUnseen(toot: Status) {
   goToToot(findLastCircular(
     allToots,
     toot,
-    t => !seenIdsSignal.value?.has(versionId(t)),
+    t => !seenSignals.get(versionId(t))?.value,
   ))
 }
 
@@ -215,7 +202,7 @@ const menuItems = (toot: Status): HParam => () => [
 ];
 
 
-const tootKeyHandler = (toot: Status, seenSig: Signal<boolean | undefined>) => (ev: KeyboardEvent) => {
+const tootKeyHandler = (toot: Status, seenSig: Signal<boolean>) => (ev: KeyboardEvent) => {
   if (ev.shiftKey) return;
   switch (ev.key) {
     case "ArrowRight":
@@ -240,9 +227,16 @@ const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
-function handleToot(toot: Status, params: TootRenderingParams): HTMLElement {
-  const tootEl = renderToot(toot, params);
-  allToots.push(toot);
+function handleToot(toot: Status, prefix: HParam = null): HTMLElement {
+  const seenSig = seenSignals.get(versionId(toot))!;
+  const tootEl = renderToot(
+    toot, {
+      keyHandler: tootKeyHandler(toot, seenSig),
+      seenSig,
+      menuItems: menuItems(toot),
+      prefix,
+    }
+  );
   tootMap.set(toot, tootEl);
   return tootEl;
 }
@@ -291,30 +285,23 @@ function renderTootTree(): void {
   // ... but extracting threads is recursive:
   const tree = extractThreads(id2subTree.get(root.id)!);
 
-  function descend(thread: Thread, bridge: boolean): HTMLElement[] {
-    return thread.map(({toot, children}, i) => {
-      const seenSig = seenIdSignals!.get(versionId(toot))!;
-      return H("li",
-        el => {
-          el.classList.add(i === 0 ? "uplink-child" : "uplink-thread");
-          el.classList.add(bridge ? "bridge" : "no-bridge");
-        },
-        handleToot(toot, {
-          keyHandler: tootKeyHandler(toot, seenSig),
-          seenSig,
-          prefix:
-            thread.length === 1 ? undefined :
-            H("span.thread-pos", `${i+1}/${thread.length}`),
-          menuItems: menuItems(toot),
-        }),
-        children.length === 0 ? null : H("ul.toot-list",
-          children.map((childThread, j) =>
-            descend(childThread, i < thread.length - 1 || j < children.length - 1)
-          ),
+  const descend = (thread: Thread, bridge: boolean): HTMLElement[] =>
+    thread.map(({toot, children}, i) => H("li",
+      el => {
+        el.classList.add(i === 0 ? "uplink-child" : "uplink-thread");
+        el.classList.add(bridge ? "bridge" : "no-bridge");
+      },
+      handleToot(
+        toot,
+        thread.length === 1 ? undefined :
+        H("span.thread-pos", `${i+1}/${thread.length}`),
+      ),
+      children.length === 0 ? null : H("ul.toot-list",
+        children.map((childThread, j) =>
+          descend(childThread, i < thread.length - 1 || j < children.length - 1)
         ),
-      );
-    });
-  }
+      ),
+    ));
 
   const topLIs = descend(tree, false);
   const rootLI = topLIs[0];
@@ -329,16 +316,7 @@ function renderTootList() {
   const {root, descendants} = details!;
   reRenderInto(descendantsEl,
     H("ul.toot-list",
-      [root, ...descendants].map(toot => {
-        const seenSig = seenIdSignals!.get(versionId(toot))!;
-        return H("li",
-          handleToot(toot, {
-            keyHandler: tootKeyHandler(toot, seenSig),
-            seenSig,
-            menuItems: menuItems(toot),
-          }),
-        );
-      }),
+      [root, ...descendants].map(toot => H("li", handleToot(toot))),
     ),
   )
 }
@@ -392,29 +370,17 @@ function renderUnfollowed() {
 function renderAncestors() {
   reRenderInto(ancestorsEl,
     H("ul.toot-list",
-      details!.ancestors.map(toot => {
-        const seenSig = seenIdSignals!.get(versionId(toot))!;
-        return H("li",
-          handleToot(toot, {
-            keyHandler: tootKeyHandler(toot, seenSig),
-            seenSig,
-            menuItems: menuItems(toot),
-          })
-        );
-      }),
+      details!.ancestors.map(toot => H("li", handleToot(toot))),
     ),
   );
 }
 
 
 async function renderDetails() {
-  allToots.length = 0;
   tootMap.clear();
 
-  const {ancestors, root, descendants} = details!;
-
   const statsMap = new Map<string, {n: number, account: Account}>();
-  for (const toot of [...ancestors, root, ...descendants]) {
+  for (const toot of allToots) {
     const accountStats = statsMap.get(toot.account.acct);
     if (accountStats) {
       accountStats.n++;
@@ -434,20 +400,6 @@ async function renderDetails() {
       n > 1 ? n.toString() : null,
     )
   ));
-
-  seenIdSignals = new Map([...ancestors, root, ...descendants].map(toot =>
-    [versionId(toot), signal<boolean>()]
-  ));
-  effect(() => {
-    for (const [id, sig] of seenIdSignals!) {
-      sig.value = seenIdsSignal.value?.has(id);
-    }
-  });
-  for (const [vId, sig] of seenIdSignals) {
-    effect(() => {
-      setSeen(vId, sig.value ?? false);
-    });
-  }
 
   renderAncestors();
   effect(() => {
@@ -470,12 +422,11 @@ async function renderDetails() {
     }
   });
 
-  goToToot(root);
+  goToToot(details?.root);
 }
 
 async function show(withDetails: boolean) {
   overview = await db.get("treeOverview", key);
-  seenIdsSignal.value = overview?.seenIds;
   fill("#app", {hidden: !overview});
   fill("#not-following", {hidden: Boolean(overview)});
   if (!overview) {
@@ -488,12 +439,50 @@ async function show(withDetails: boolean) {
     overview.rootAuthorAvatar ?? "";
   renderTreeHead();
 
-  if (withDetails) {
+  if (!withDetails) {
+    if (!details) return;
+    const {seenIds} = overview!;
+    for (const toot of allToots) {
+      const vId = versionId(toot);
+      const sig = seenSignals.get(vId);
+      if (sig) {
+        sig.value = seenIds.has(vId);
+      } else {
+        // We should never come here:  We have unchanged details/allToots and
+        // seenSignals should already cover these toots.
+        console.warn(`Misssing "seen" signal for toot ${vId}`);
+      }
+    }
+  } else {
     details = await db.get("treeDetails", key);
     if (!details) {
       document.title = overview.rootAuthor ?? "Follow Toot";
       return;
     }
+    const {ancestors, root, descendants} = details!;
+    allToots = [...ancestors, root, ...descendants];
+
+    seenSignals.clear();
+    for (const toot of allToots) {
+      const vId = versionId(toot);
+      const sig = signal<boolean>(overview?.seenIds.has(vId) ?? false);
+      effect(() => {
+        const value = sig.value ?? false;
+        if (!overview) return;
+        const {seenIds} = overview;
+        // TODO Can we replace this manual identity check by making better use of
+        // signals?
+        if (seenIds.has(vId) === value) return;
+        if (value) {
+          seenIds.add(vId);
+        } else {
+          seenIds.delete(vId);
+        }
+        updateSeen(overview!);
+      });
+      seenSignals.set(vId, sig);
+    }
+
     await renderDetails();
   }
 }
