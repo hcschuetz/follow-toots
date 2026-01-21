@@ -1,10 +1,9 @@
 import { effect, Signal } from "@preact/signals-core";
 
 import A_blank from "./A_blank";
-import H, { reRenderInto, type HParam } from "./H";
+import H, { type HParam } from "./H";
 import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
-import { linkableFeatures, linkConfigConfig, type LinkableFeature } from "./linkConfigConfig";
 import sanitize from "./sanitize";
 import formatDate from "./formatDate";
 import "./DropDownMenu";
@@ -12,18 +11,13 @@ import "./ContextMenu";
 
 // TODO simplify the API between tree rendering and toot rendering
 
-export 
-type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
-
 export
 type TootRenderingParams = {
-  instance: string,
+  prefix?: HParam<HTMLElement>,
   keyHandler: (ev: KeyboardEvent) => void,
-  extraMenuItems: HParam<HTMLElement>,
-  linkConfigSig: Signal<LinkConfig | undefined>,
+  menuItems: HParam<HTMLElement>,
   seenSig: Signal<boolean | undefined>,
   contextMenuSig: Signal<"standard" | "custom">,
-  prefix?: HParam<HTMLElement>,
 }
 
 export default
@@ -31,57 +25,15 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
 
   const {account, poll, card} = toot;
   const {
-    instance, prefix,
+    prefix,
     keyHandler,
     seenSig,
-    extraMenuItems, linkConfigSig, contextMenuSig,
+    menuItems, contextMenuSig,
   } = params;
 
   function toggleSeen() {
     seenSig.value = !seenSig.value;
   }
-
-  function menuItems(el: HTMLElement) {
-    effect(() => {
-      const {value} = linkConfigSig;
-      reRenderInto(el, function*() {
-        yield extraMenuItems;
-        for (const feature of ["status", "profile"] as const) {
-          const obj = value?.[feature] ?? {};
-          for (const k in obj) if (obj[k]) {
-            const frontend = linkConfigConfig[k];
-            const href = frontend.urlFunctions[feature](instance, toot);
-            yield H("button.open-link",
-              {onclick: () => window.open(href)},
-              H("img.link-icon", {src: frontend.icon}),
-              ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
-            );
-          }
-        }
-        // Omit this menu item if this toot is already the root?
-        yield H("button.follow-toot",
-          {onclick: () => {
-            const url = new URL("./tree.html", document.location.href);
-            url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
-            window.open(url);
-          }},
-          "Follow toot",
-        );
-        yield H("button",
-          el => {
-            effect(() => {
-              const otherContextMenu =
-                contextMenuSig.value === "standard" ? "custom" : "standard";
-              reRenderInto(el,
-                `Use ${otherContextMenu} context menu`,
-                {onclick() { contextMenuSig.value = otherContextMenu; }},
-              );
-            });
-          },
-        );
-      });
-    });
-  };
 
   const tootEl: HTMLElement = H("div",
     {

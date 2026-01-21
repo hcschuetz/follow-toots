@@ -7,11 +7,12 @@ import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
-import renderToot, { type LinkConfig, type TootRenderingParams } from './renderToot';
+import renderToot, { type TootRenderingParams } from './renderToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
 import type { Account, Status } from './mastodon-entities';
 import { findCircular, findLastCircular } from './findCircular';
+import { linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -108,6 +109,8 @@ async function setSeen(tootId: string, rootKey: string, value: boolean) {
   updateSeen(overview);
 };
 
+type LinkConfig = Record<LinkableFeature, Record<string, boolean>>;
+
 const linkConfigSig =
   signal<LinkConfig | undefined>(undefined, {name: "linkConfig"});
 
@@ -175,12 +178,51 @@ function previousUnseen(toot: Status) {
   ))
 }
 
-const extraMenuItems = (toot: Status): HParam<HTMLElement> | undefined => [
-  H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(toot); }}),
-  H("button", "Previous toot (⬆️)"            , {onclick() { previousUnseen(toot); }}),
-  H("button", "Next toot (⬇️)"                , {onclick() { nextUnseen(toot)      }}),
-  H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(toot)      }}),
-];
+const menuItems = (toot: Status) => (el: HTMLElement) => {
+  const [instance] = key.split("/", 1); // hacky
+  effect(() => {
+    const {value} = linkConfigSig;
+    reRenderInto(el, function*() {
+      yield H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(toot); }});
+      yield H("button", "Previous toot (⬆️)"            , {onclick() { previousToot(toot);   }});
+      yield H("button", "Next toot (⬇️)"                , {onclick() { nextUnseen(toot)      }});
+      yield H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextToot(toot)        }});
+      for (const feature of ["status", "profile"] as const) {
+        const obj = value?.[feature] ?? {};
+        for (const k in obj) if (obj[k]) {
+          const frontend = linkConfigConfig[k];
+          const href = frontend.urlFunctions[feature](instance, toot);
+          yield H("button.open-link",
+            {onclick: () => window.open(href)},
+            H("img.link-icon", {src: frontend.icon}),
+            ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
+          );
+        }
+      }
+      // Omit this menu item if this toot is already the root?
+      yield H("button.follow-toot",
+        {onclick: () => {
+          const url = new URL("./tree.html", document.location.href);
+          url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
+          window.open(url);
+        }},
+        "Follow toot",
+      );
+      yield H("button",
+        el => {
+          effect(() => {
+            const otherContextMenu =
+              contextMenuSig.value === "standard" ? "custom" : "standard";
+            reRenderInto(el,
+              `Use ${otherContextMenu} context menu`,
+              {onclick() { contextMenuSig.value = otherContextMenu; }},
+            );
+          });
+        },
+      );
+    });
+  });
+}
 
 const tootKeyHandler = (toot: Status, seenSig: Signal<boolean | undefined>) => (ev: KeyboardEvent) => {
   if (ev.shiftKey) return;
@@ -244,7 +286,7 @@ function extractThreads(st: Tree): Thread {
 }
 
 function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): void {
-  const {key, root, descendants} = details;
+  const {root, descendants} = details;
 
   // Building a recursive datastructure without recursion:
   // - Create subtree nodes for each toot and index them by an auxiliary map.
@@ -258,8 +300,6 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
   // ... but extracting threads is recursive:
   const tree = extractThreads(id2subTree.get(root.id)!);
 
-  const [instance] = key.split("/", 1); // a bit hacky
-
   function descend(thread: Thread, bridge: boolean): HTMLElement[] {
     return thread.map(({toot, children}, i) => {
       const seenSig = seenIdSignals.get(versionId(toot))!;
@@ -269,15 +309,13 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
           el.classList.add(bridge ? "bridge" : "no-bridge");
         },
         handleToot(toot, {
-          instance,
           keyHandler: tootKeyHandler(toot, seenSig),
-          linkConfigSig,
           seenSig,
           contextMenuSig,
           prefix:
             thread.length === 1 ? undefined :
             H("span.thread-pos", `${i+1}/${thread.length}`),
-          extraMenuItems: extraMenuItems(toot),
+          menuItems: menuItems(toot),
         }),
         children.length === 0 ? null : H("ul.toot-list",
           children.map((childThread, j) =>
@@ -301,20 +339,17 @@ function renderTootList(
   details: DetailEntry,
   seenIdSignals: SeenIdSignals,
 ) {
-  const {key, root, descendants} = details;
-  const [instance] = key.split("/", 1); // a bit hacky
+  const {root, descendants} = details;
   reRenderInto(descendantsEl,
     H("ul.toot-list",
       [root, ...descendants].map(toot => {
         const seenSig = seenIdSignals.get(versionId(toot))!;
         return H("li",
           handleToot(toot, {
-            instance,
             keyHandler: tootKeyHandler(toot, seenSig),
-            linkConfigSig,
             seenSig,
             contextMenuSig,
-            extraMenuItems: extraMenuItems(toot),
+            menuItems: menuItems(toot),
           }),
         );
       }),
@@ -364,19 +399,16 @@ function renderUnfollowed(instance: string, id: string) {
 }
 
 function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
-  const [instance] = key.split("/", 1); // a bit hacky
   reRenderInto(ancestorsEl,
     H("ul.toot-list",
       details.ancestors.map(toot => {
         const seenSig = seenIdSignals.get(versionId(toot))!;
         return H("li",
           handleToot(toot, {
-            instance,
             keyHandler: tootKeyHandler(toot, seenSig),
-            linkConfigSig,
             seenSig,
             contextMenuSig,
-            extraMenuItems: extraMenuItems(toot),
+            menuItems: menuItems(toot),
           })
         );
       }),
