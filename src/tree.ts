@@ -47,7 +47,9 @@ function closeWindow(): never {
 }
 
 // TODO report problem if instance or value are missing or look strange
-const key = `${params.get("instance")}/${params.get("id")}`;
+const instance = params.get("instance")!;
+const id = params.get("id")!;
+const key = `${instance}/${id}`;
 
 setupNotifications<Notifications>("followToots", {
   async updatedTreeOverview(updKey) {
@@ -178,51 +180,59 @@ function previousUnseen(toot: Status) {
   ))
 }
 
-const menuItems = (toot: Status) => (el: HTMLElement) => {
-  const [instance] = key.split("/", 1); // hacky
-  effect(() => {
-    const {value} = linkConfigSig;
-    reRenderInto(el, function*() {
-      yield H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(toot); }});
-      yield H("button", "Previous toot (⬆️)"            , {onclick() { previousToot(toot);   }});
-      yield H("button", "Next toot (⬇️)"                , {onclick() { nextUnseen(toot)      }});
-      yield H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextToot(toot)        }});
-      for (const feature of ["status", "profile"] as const) {
-        const obj = value?.[feature] ?? {};
-        for (const k in obj) if (obj[k]) {
-          const frontend = linkConfigConfig[k];
-          const href = frontend.urlFunctions[feature](instance, toot);
-          yield H("button.open-link",
-            {onclick: () => window.open(href)},
-            H("img.link-icon", {src: frontend.icon}),
-            ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
-          );
-        }
-      }
-      // Omit this menu item if this toot is already the root?
-      yield H("button.follow-toot",
-        {onclick: () => {
-          const url = new URL("./tree.html", document.location.href);
-          url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
-          window.open(url);
-        }},
-        "Follow toot",
-      );
-      yield H("button",
-        el => {
-          effect(() => {
-            const otherContextMenu =
-              contextMenuSig.value === "standard" ? "custom" : "standard";
-            reRenderInto(el,
-              `Use ${otherContextMenu} context menu`,
-              {onclick() { contextMenuSig.value = otherContextMenu; }},
-            );
-          });
-        },
-      );
-    });
-  });
-}
+// The extra `() =>` makes this return a factory function.
+// This is needed because we need two copies of the menu items:
+// in the burger menu and in the context menu.
+const menuItems = (toot: Status): HParam => () => [
+  H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(toot); }}),
+  H("button", "Previous toot (⬆️)"            , {onclick() { previousToot(toot);   }}),
+  H("button", "Next toot (⬇️)"                , {onclick() { nextToot(toot)        }}),
+  H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(toot)      }}),
+  H("div.contents",
+    el => {
+      effect(() => {
+        reRenderInto(el, function*() {
+          const linkConfig = linkConfigSig.value;
+          if (!linkConfig) return;
+          for (const feature of ["status", "profile"] as const) {
+            const obj = linkConfig[feature];
+            for (const k in obj) if (obj[k]) {
+              const frontend = linkConfigConfig[k];
+              const href = frontend.urlFunctions[feature](instance, toot);
+              yield H("button.open-link",
+                {onclick: () => window.open(href)},
+                H("img.link-icon", {src: frontend.icon}),
+                ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
+              );
+            }
+          }
+        });
+      })
+    },
+  ),
+  // Omit this menu item if this toot is already the root?
+  H("button.follow-toot",
+    {onclick: () => {
+      const url = new URL("./tree.html", document.location.href);
+      url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
+      window.open(url);
+    }},
+    "Follow toot",
+  ),
+  H("button",
+    el => {
+      effect(() => {
+        const otherContextMenu =
+          contextMenuSig.value === "standard" ? "custom" : "standard";
+        reRenderInto(el,
+          `Use ${otherContextMenu} context menu`,
+          {onclick() { contextMenuSig.value = otherContextMenu; }},
+        );
+      });
+    },
+  ),
+];
+
 
 const tootKeyHandler = (toot: Status, seenSig: Signal<boolean | undefined>) => (ev: KeyboardEvent) => {
   if (ev.shiftKey) return;
@@ -487,7 +497,6 @@ async function renderDetails(details: DetailEntry) {
 
 async function show(withDetails: boolean) {
   await setSeenIdsSignal();
-  const [instance, id] = key.split("/"); // particularly hacky (what if an id contains a "/"?)
   const overview = await db.get("treeOverview", key);
   fill("#app", {hidden: !overview});
   fill("#not-following", {hidden: Boolean(overview)});
