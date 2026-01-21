@@ -380,7 +380,7 @@ function renderTreeHead() {
   });
 }
 
-function renderUnfollowed(instance: string, id: string) {
+function renderUnfollowed() {
   refill("#toot-id", id);
   refill("#toot-instance", instance);
   fill("#follow", {onclick: () => fetchTree(instance, id)});
@@ -480,7 +480,7 @@ async function show(withDetails: boolean) {
   fill("#app", {hidden: !overview});
   fill("#not-following", {hidden: Boolean(overview)});
   if (!overview) {
-    renderUnfollowed(instance, id);
+    renderUnfollowed();
     return;
   }
 
