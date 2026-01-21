@@ -24,12 +24,7 @@ export default
 function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
 
   const {account, poll, card} = toot;
-  const {
-    prefix,
-    keyHandler,
-    seenSig,
-    menuItems, contextMenuSig,
-  } = params;
+  const {prefix, keyHandler, menuItems, seenSig, contextMenuSig} = params;
 
   function toggleSeen() {
     seenSig.value = !seenSig.value;
