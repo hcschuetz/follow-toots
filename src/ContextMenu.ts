@@ -6,7 +6,9 @@ style.replaceSync(styleRaw);
 
 export default
 class ContextMenu extends HTMLElement {
-  disabled = false;
+  /** This is static because we want to disable/enable all instances at once. */
+  static disabled = false;
+
   open: (ev: PointerEvent) => unknown;
   close: () => unknown;
 
@@ -19,7 +21,7 @@ class ContextMenu extends HTMLElement {
     shadowRoot.append(menu);
 
     this.open = ev => {
-      if (this.disabled) return;
+      if (ContextMenu.disabled) return;
       ev.preventDefault();
       menu.style.left = ev.clientX + "px";
       menu.style.top = ev.clientY + "px";

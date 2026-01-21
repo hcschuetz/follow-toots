@@ -13,6 +13,7 @@ import versionId from './versionId';
 import type { Account, Status } from './mastodon-entities';
 import { findCircular, findLastCircular } from './findCircular';
 import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
+import ContextMenu from './ContextMenu';
 
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
@@ -126,15 +127,13 @@ readLinkConfig();
 
 
 const contextMenuEl = document.querySelector<HTMLSelectElement>("#context-menu")!;
-const contextMenuSig = signal<"standard" | "custom">("custom");
-effect(() => {
-  contextMenuEl.value = contextMenuSig.value;
-});
-function updateContextMenu() {
-  contextMenuSig.value = contextMenuEl.value as "standard" | "custom";
+{
+  function propagate() {
+    ContextMenu.disabled = contextMenuEl.value === "standard";
+  }
+  contextMenuEl.onchange = propagate;
+  propagate();
 }
-contextMenuEl.addEventListener("change", updateContextMenu);
-updateContextMenu();
 
 
 const allToots = new Array<Status>();
@@ -218,18 +217,6 @@ const menuItems = (toot: Status): HParam => () => [
       window.open(url);
     }},
     "Follow toot",
-  ),
-  H("button",
-    el => {
-      effect(() => {
-        const otherContextMenu =
-          contextMenuSig.value === "standard" ? "custom" : "standard";
-        reRenderInto(el,
-          `Use ${otherContextMenu} context menu`,
-          {onclick() { contextMenuSig.value = otherContextMenu; }},
-        );
-      });
-    },
   ),
 ];
 
@@ -321,7 +308,6 @@ function renderTootTree(details: DetailEntry, seenIdSignals: SeenIdSignals): voi
         handleToot(toot, {
           keyHandler: tootKeyHandler(toot, seenSig),
           seenSig,
-          contextMenuSig,
           prefix:
             thread.length === 1 ? undefined :
             H("span.thread-pos", `${i+1}/${thread.length}`),
@@ -358,7 +344,6 @@ function renderTootList(
           handleToot(toot, {
             keyHandler: tootKeyHandler(toot, seenSig),
             seenSig,
-            contextMenuSig,
             menuItems: menuItems(toot),
           }),
         );
@@ -417,7 +402,6 @@ function renderAncestors(details: DetailEntry, seenIdSignals: SeenIdSignals) {
           handleToot(toot, {
             keyHandler: tootKeyHandler(toot, seenSig),
             seenSig,
-            contextMenuSig,
             menuItems: menuItems(toot),
           })
         );

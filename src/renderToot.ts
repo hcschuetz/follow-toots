@@ -17,14 +17,13 @@ type TootRenderingParams = {
   keyHandler: (ev: KeyboardEvent) => void,
   menuItems: HParam<HTMLElement>,
   seenSig: Signal<boolean | undefined>,
-  contextMenuSig: Signal<"standard" | "custom">,
 }
 
 export default
 function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
 
   const {account, poll, card} = toot;
-  const {prefix, keyHandler, menuItems, seenSig, contextMenuSig} = params;
+  const {prefix, keyHandler, menuItems, seenSig} = params;
 
   function toggleSeen() {
     seenSig.value = !seenSig.value;
@@ -37,11 +36,6 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
       onkeydown: keyHandler,
     },
     H("context-menu" as any,
-      el => {
-        effect(() => {
-          el.disabled = contextMenuSig.value === "standard";
-        });
-      },
       H("button",
         {onclick() {
           toggleSeen();
