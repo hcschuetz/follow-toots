@@ -1,4 +1,4 @@
-import { effect, Signal, signal } from '@preact/signals-core';
+import { effect, type Signal, signal } from '@preact/signals-core';
 
 import { deleteTree, fetchTree, updateSeen } from './actions';
 import H, { renderInto, reRenderInto, type HParam } from './H';
@@ -132,13 +132,13 @@ const toots = new Array<Status>();
 function handleToot(toot: Status, prefix?: HTMLElement) {
   toots.push(toot);
   const rendered = tootMap.get(toot)!;
-  rendered.setPrefix(prefix);
-  return rendered.tootEl;
+  rendered.headerPrefix = prefix;
+  return rendered;
 }
 
 function goToToot(toot?: Status) {
   if (!toot) return;
-  const to = tootMap.get(toot)?.tootEl;
+  const to = tootMap.get(toot);
   if (!to) return;
   to.focus({preventScroll: true});
   to.scrollIntoView({
@@ -176,10 +176,7 @@ function previousUnseen(toot: Status) {
   ));
 }
 
-// The extra `() =>` makes this return a factory function.
-// This is needed because we need two copies of the menu items:
-// in the burger menu and in the context menu.
-const menuItems = (toot: Status): HParam => () => [
+const menuItems = (toot: Status): HParam => [
   H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(toot); }}),
   H("button", "Previous toot (⬆️)"            , {onclick() { previousToot(toot);   }}),
   H("button", "Next toot (⬇️)"                , {onclick() { nextToot(toot)        }}),
@@ -426,13 +423,14 @@ async function renderDetails() {
   tootMap.clear();
   for (const toot of allToots) {
     const seenSig = seenSignals.get(versionId(toot))!;
-    tootMap.set(toot, new RenderedToot(
-      toot, {
-        keyHandler: tootKeyHandler(toot, seenSig),
-        seenSig,
-        menuItems: menuItems(toot),
-      }
-    ));
+    const tootEl = renderInto(new RenderedToot(toot), {
+      contextMenuItems: menuItems(toot),
+      dropDownMenuItems: menuItems(toot),
+      onseenchange: ev => seenSig.value = ev.detail,
+      onkeydown: tootKeyHandler(toot, seenSig),
+    });
+    regEffect(() => { tootEl.seen = seenSig.value; });
+    tootMap.set(toot, tootEl);
   }
 
   toots.length = 0;

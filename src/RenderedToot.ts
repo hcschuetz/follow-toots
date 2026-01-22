@@ -1,7 +1,5 @@
-import { effect, Signal } from "@preact/signals-core";
-
 import A_blank from "./A_blank";
-import H, { reRenderInto, type HParam } from "./H";
+import H, { H_, reRenderInto, type HParam } from "./H";
 import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
 import sanitize from "./sanitize";
@@ -9,77 +7,73 @@ import formatDate from "./formatDate";
 import "./DropDownMenu";
 import "./ContextMenu";
 
-// TODO simplify the API between tree rendering and toot rendering
-
-export
-type TootRenderingParams = {
-  keyHandler: (ev: KeyboardEvent) => void,
-  menuItems: HParam<HTMLElement>,
-  seenSig: Signal<boolean | undefined>,
-}
-
 export default
-class RenderedToot {
-  readonly tootEl: HTMLElement;
+class RenderedToot extends HTMLElement {
+  #prefixWrapper = H("span.contents.prefix");
+  set headerPrefix(hp: HParam) { reRenderInto(this.#prefixWrapper, hp); }
 
-  /** A "slot" within the `tootEl`.  It can be filled by calling code,
-   * for example to display a thread position. */
-  setPrefix: (el: HParam) => void;
+  #seenInput = H("input.seen", {
+    type: "checkbox",
+    onchange: () => {
+      this.seen = this.seen; // trigger side effects of `set seen(...)`
+      this.onseenchange?.(new CustomEvent("seenchanged", {detail: this.seen}));
+    },
+    title: "Mark toot as seen/unseen"
+  });
+  get seen() { return this.#seenInput.checked }
+  set seen(value: boolean) {
+    this.#seenInput.checked = value;
+    this.#toggleMenuButton.textContent =
+      value ? "☐ Mark toot as unseen (↩)" : "☑ Mark toot as seen (↩)";
+  }
+  onseenchange?: (ev: CustomEvent<boolean>) => unknown;
 
-  constructor(toot: Status, params: TootRenderingParams) {
+  #dropDownMenu = H_("drop-down-menu");
+  set dropDownMenuItems(menuItems: HParam) {
+    reRenderInto(this.#dropDownMenu, menuItems);
+  }
+
+  #toggleMenuButton = H("button",
+    {onclick: () => {
+      this.seen = !this.seen;
+      setTimeout(() => {
+        this.scrollIntoView({
+          // "start" would move it behind the sticky header
+          block: "center",
+          behavior: "smooth",
+        });
+      }, 100);
+    }},
+  );
+
+  #contextMenuItemContainer = H("div.contents");
+  set contextMenuItems(menuItems: HParam) {
+    reRenderInto(this.#contextMenuItemContainer, menuItems);
+  }
+
+  // TODO make this element focussable instead of delegating to the child?
+  focus = (options?: FocusOptions) =>
+    (this.firstElementChild as HTMLElement).focus(options);
+
+  // Without a 0-parameter constructor we cannot create instances in HTML,
+  // but only in JS.
+  constructor(toot: Status) {
+    super();
     const {account, poll, card} = toot;
-    const {keyHandler, menuItems, seenSig} = params;
-
-    function toggleSeen() {
-      seenSig.value = !seenSig.value;
-    }
-
-    const prefixEl = H("span.contents.prefix");
-    this.setPrefix = el => reRenderInto(prefixEl, el)
-
-    const tootEl = this.tootEl = H("div",
+    this.append(H("div",
       {
         className: `toot visibility-${toot.visibility}`,
         tabIndex: 0,
-        onkeydown: keyHandler,
+        onkeydown: ev => this.onkeydown?.(ev),
       },
-      H("context-menu" as any,
-        H("button",
-          {onclick() {
-            toggleSeen();
-            setTimeout(() => {
-              tootEl.scrollIntoView({
-                // "start" would move it behind the sticky header
-                block: "center",
-                behavior: "smooth",
-              });
-            }, 100);
-          }},
-          el => {
-            effect(() => {
-              el.textContent = seenSig.value
-                ? "☐ Mark toot as unseen (↩)"
-                : "☑ Mark toot as seen (↩)";
-            });
-          }
-        ),
-        H("div.contents", menuItems),
+      H_("context-menu",
+        this.#toggleMenuButton,
+        this.#contextMenuItemContainer,
       ),
       H("div.toot-head",
-        prefixEl,
-        H("input.seen",
-          {
-            type: "checkbox",
-            "@change": toggleSeen,
-            title: "Mark toot as seen/unseen"
-          },
-          el => {
-            effect(() => {
-              el.checked = Boolean(seenSig.value);
-            });
-          }
-        ),
-        H("drop-down-menu" as any, menuItems),
+        this.#prefixWrapper,
+        this.#seenInput,
+        this.#dropDownMenu,
         H("span.visibility", toot.visibility),
         toot.edited_at ? [
           H("span.toot-created.line-through", formatDate(toot.created_at)),
@@ -217,6 +211,9 @@ class RenderedToot {
         body.classList.add("toot-full-body");
         return body;
       },
-    );
+    ));
   }
 }
+
+window.customElements.define("rendered-toot", RenderedToot);
+
