@@ -7,7 +7,7 @@ import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
-import renderToot from './renderToot';
+import renderToot, { type TootRenderingResult } from './renderToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
 import type { Account, Status } from './mastodon-entities';
@@ -118,12 +118,20 @@ const contextMenuEl = document.querySelector<HTMLInputElement>("#context-menu")!
 }
 
 
-/** Maps toots to their renderings and is ordered according to the rendering */
-const tootMap = new Map<Status, HTMLElement>();
+const tootMap = new Map<Status, TootRenderingResult>();
+/** ordered according to the current display mode */
+const toots = new Array<Status>();
+
+function handleToot(toot: Status, prefix?: HTMLElement) {
+  toots.push(toot);
+  const {tootEl, prefixEl} = tootMap.get(toot)!;
+  prefixEl.replaceChildren(...prefix ? [prefix] : []);
+  return tootEl;
+}
 
 function goToToot(toot?: Status) {
   if (!toot) return;
-  const to = tootMap.get(toot);
+  const to = tootMap.get(toot)?.tootEl;
   if (!to) return;
   to.focus({preventScroll: true});
   to.scrollIntoView({
@@ -133,14 +141,12 @@ function goToToot(toot?: Status) {
 }
 
 function nextToot(toot: Status) {
-  const toots = [...tootMap.keys()];
   const i = toots.findIndex(t => t === toot);
   if (i < 0) return;
   goToToot(toots[(i+1) % toots.length]);
 }
 
 function previousToot(toot: Status) {
-  const toots = [...tootMap.keys()];
   const n = toots.length;
   const i = toots.findIndex(t => t === toot);
   if (i < 0) return;
@@ -149,7 +155,7 @@ function previousToot(toot: Status) {
 
 function nextUnseen(toot: Status) {
   goToToot(findCircular(
-    tootMap.keys(),
+    toots,
     toot,
     t => !seenSignals.get(versionId(t))?.value,
   ));
@@ -157,7 +163,7 @@ function nextUnseen(toot: Status) {
 
 function previousUnseen(toot: Status) {
   goToToot(findLastCircular(
-    tootMap.keys(),
+    toots,
     toot,
     t => !seenSignals.get(versionId(t))?.value,
   ));
@@ -229,20 +235,6 @@ const tootKeyHandler = (toot: Status, seenSig: Signal<boolean>) => (ev: Keyboard
 const tootTreeEl = document.querySelector<HTMLElement>("#toot-tree")!;
 const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
-
-function handleToot(toot: Status, prefix: HParam = null): HTMLElement {
-  const seenSig = seenSignals.get(versionId(toot))!;
-  const tootEl = renderToot(
-    toot, {
-      keyHandler: tootKeyHandler(toot, seenSig),
-      seenSig,
-      menuItems: menuItems(toot),
-      prefix,
-    }
-  );
-  tootMap.set(toot, tootEl);
-  return tootEl;
-}
 
 
 type Tree = {toot: Status, children: Tree[]};
@@ -378,10 +370,7 @@ function renderAncestors() {
   );
 }
 
-
 async function renderDetails() {
-  tootMap.clear();
-
   const statsMap = new Map<string, {n: number, account: Account}>();
   for (const toot of allToots) {
     const accountStats = statsMap.get(toot.account.acct);
@@ -404,8 +393,24 @@ async function renderDetails() {
     )
   ));
 
+  tootMap.clear();
+  for (const toot of allToots) {
+    const seenSig = seenSignals.get(versionId(toot))!;
+    tootMap.set(toot, renderToot(
+      toot, {
+        keyHandler: tootKeyHandler(toot, seenSig),
+        seenSig,
+        menuItems: menuItems(toot),
+      }
+    ));
+  }
+
+  toots.length = 0;
   renderAncestors();
+
   effect(() => {
+    toots.length = details!.ancestors.length;
+
     const displayMode = displayModeSig.value;
     tootTreeEl.classList.remove(...displayModes);
     tootTreeEl.classList.add(displayMode);

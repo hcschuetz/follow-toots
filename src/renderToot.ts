@@ -13,22 +13,30 @@ import "./ContextMenu";
 
 export
 type TootRenderingParams = {
-  prefix?: HParam<HTMLElement>,
   keyHandler: (ev: KeyboardEvent) => void,
   menuItems: HParam<HTMLElement>,
   seenSig: Signal<boolean | undefined>,
 }
 
+export
+type TootRenderingResult = {
+  tootEl: HTMLElement,
+  /** A "slot" within the `tootEl`.  It can be filled by calling code,
+   * for example to display a thread position. */
+  prefixEl: HTMLElement,
+}
+
 export default
-function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
+function renderToot(toot: Status, params: TootRenderingParams): TootRenderingResult {
 
   const {account, poll, card} = toot;
-  const {prefix, keyHandler, menuItems, seenSig} = params;
+  const {keyHandler, menuItems, seenSig} = params;
 
   function toggleSeen() {
     seenSig.value = !seenSig.value;
   }
 
+  const prefixEl = H("span.contents.prefix");
   const tootEl: HTMLElement = H("div",
     {
       className: `toot visibility-${toot.visibility}`,
@@ -58,7 +66,7 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
       H("div.contents", menuItems),
     ),
     H("div.toot-head",
-      prefix,
+      prefixEl,
       H("input.seen",
         {
           type: "checkbox",
@@ -210,5 +218,5 @@ function renderToot(toot: Status, params: TootRenderingParams): HTMLElement {
       return body;
     },
   );
-  return tootEl;
+  return {tootEl, prefixEl};
 }
