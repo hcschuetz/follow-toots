@@ -7,7 +7,7 @@ import type { Notifications } from './Notifications';
 import setupNotifications from './setupNotifications';
 import url2key from './url2key';
 import emojify from './emojify';
-import renderToot, { type TootRenderingResult } from './renderToot';
+import RenderedToot from './RenderedToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
 import type { Account, Status } from './mastodon-entities';
@@ -118,15 +118,15 @@ const contextMenuEl = document.querySelector<HTMLInputElement>("#context-menu")!
 }
 
 
-const tootMap = new Map<Status, TootRenderingResult>();
+const tootMap = new Map<Status, RenderedToot>();
 /** ordered according to the current display mode */
 const toots = new Array<Status>();
 
 function handleToot(toot: Status, prefix?: HTMLElement) {
   toots.push(toot);
-  const {tootEl, prefixEl} = tootMap.get(toot)!;
-  prefixEl.replaceChildren(...prefix ? [prefix] : []);
-  return tootEl;
+  const rendered = tootMap.get(toot)!;
+  rendered.setPrefix(prefix);
+  return rendered.tootEl;
 }
 
 function goToToot(toot?: Status) {
@@ -396,7 +396,7 @@ async function renderDetails() {
   tootMap.clear();
   for (const toot of allToots) {
     const seenSig = seenSignals.get(versionId(toot))!;
-    tootMap.set(toot, renderToot(
+    tootMap.set(toot, new RenderedToot(
       toot, {
         keyHandler: tootKeyHandler(toot, seenSig),
         seenSig,
