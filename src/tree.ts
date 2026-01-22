@@ -14,6 +14,13 @@ import type { Account, Status } from './mastodon-entities';
 import { findCircular, findLastCircular } from './findCircular';
 import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 import ContextMenu from './ContextMenu';
+import Registry from './Registry';
+
+const registry = new Registry();
+
+function regEffect(fn: () => void) {
+  registry.register(effect(fn));
+}
 
 const db = await database;
 
@@ -179,7 +186,7 @@ const menuItems = (toot: Status): HParam => () => [
   H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(toot)      }}),
   H("div.contents",
     el => {
-      effect(() => {
+      regEffect(() => {
         const linkConfig = linkConfigSig.value;
         if (!linkConfig) return;
         reRenderInto(el, function*() {
@@ -393,6 +400,29 @@ async function renderDetails() {
     )
   ));
 
+  registry.disposeAll();
+
+  seenSignals.clear();
+  for (const toot of allToots) {
+    const vId = versionId(toot);
+    const sig = signal<boolean>(overview?.seenIds.has(vId) ?? false);
+    regEffect(() => {
+      const value = sig.value ?? false;
+      if (!overview) return;
+      const {seenIds} = overview;
+      // TODO Can we replace this manual identity check by making better use of
+      // signals?
+      if (seenIds.has(vId) === value) return;
+      if (value) {
+        seenIds.add(vId);
+      } else {
+        seenIds.delete(vId);
+      }
+      updateSeen(overview!);
+    });
+    seenSignals.set(vId, sig);
+  }
+
   tootMap.clear();
   for (const toot of allToots) {
     const seenSig = seenSignals.get(versionId(toot))!;
@@ -408,7 +438,7 @@ async function renderDetails() {
   toots.length = 0;
   renderAncestors();
 
-  effect(() => {
+  regEffect(() => {
     toots.length = details!.ancestors.length;
 
     const displayMode = displayModeSig.value;
@@ -469,27 +499,6 @@ async function show(withDetails: boolean) {
     }
     const {ancestors, root, descendants} = details!;
     allToots = [...ancestors, root, ...descendants];
-
-    seenSignals.clear();
-    for (const toot of allToots) {
-      const vId = versionId(toot);
-      const sig = signal<boolean>(overview?.seenIds.has(vId) ?? false);
-      effect(() => {
-        const value = sig.value ?? false;
-        if (!overview) return;
-        const {seenIds} = overview;
-        // TODO Can we replace this manual identity check by making better use of
-        // signals?
-        if (seenIds.has(vId) === value) return;
-        if (value) {
-          seenIds.add(vId);
-        } else {
-          seenIds.delete(vId);
-        }
-        updateSeen(overview!);
-      });
-      seenSignals.set(vId, sig);
-    }
 
     await renderDetails();
   }
