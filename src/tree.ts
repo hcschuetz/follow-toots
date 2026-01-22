@@ -118,6 +118,7 @@ const contextMenuEl = document.querySelector<HTMLInputElement>("#context-menu")!
 }
 
 
+/** Maps toots to their renderings and is ordered according to the rendering */
 const tootMap = new Map<Status, HTMLElement>();
 
 function goToToot(toot?: Status) {
@@ -132,32 +133,34 @@ function goToToot(toot?: Status) {
 }
 
 function nextToot(toot: Status) {
-  const i = allToots.findIndex(t => t === toot);
+  const toots = [...tootMap.keys()];
+  const i = toots.findIndex(t => t === toot);
   if (i < 0) return;
-  goToToot(allToots[(i+1) % allToots.length]);
+  goToToot(toots[(i+1) % toots.length]);
 }
 
 function previousToot(toot: Status) {
-  const n = allToots.length;
-  const i = allToots.findIndex(t => t === toot);
+  const toots = [...tootMap.keys()];
+  const n = toots.length;
+  const i = toots.findIndex(t => t === toot);
   if (i < 0) return;
-  goToToot(allToots[(i-1 + n) % n]);
+  goToToot(toots[(i-1 + n) % n]);
 }
 
 function nextUnseen(toot: Status) {
   goToToot(findCircular(
-    allToots,
+    tootMap.keys(),
     toot,
     t => !seenSignals.get(versionId(t))?.value,
-  ))
+  ));
 }
 
 function previousUnseen(toot: Status) {
   goToToot(findLastCircular(
-    allToots,
+    tootMap.keys(),
     toot,
     t => !seenSignals.get(versionId(t))?.value,
-  ))
+  ));
 }
 
 // The extra `() =>` makes this return a factory function.
