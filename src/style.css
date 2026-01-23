@@ -209,6 +209,10 @@ body.tree {
     &:focus {
       outline: 3px solid #333;
     }
+    .menu-entry-with-key-hint {
+      display: flex;
+      justify-content: space-between;
+    }
     .open-link {
       display: inline-flex;
       gap: 0.5em;

@@ -176,11 +176,14 @@ function previousUnseen(toot: Status) {
   ));
 }
 
+const navButton = (text: string, key: string, onclick: () => void) =>
+  H("button.menu-entry-with-key-hint", H("span", text), H("span", key), {onclick});
+
 const menuItems = (toot: Status): HParam => [
-  H("button", "Previous unseen toot (Ctrl ⬆️)", {onclick() { previousUnseen(toot); }}),
-  H("button", "Previous toot (⬆️)"            , {onclick() { previousToot(toot);   }}),
-  H("button", "Next toot (⬇️)"                , {onclick() { nextToot(toot)        }}),
-  H("button", "Next unseen toot (Ctrl ⬇️)"    , {onclick() { nextUnseen(toot)      }}),
+  navButton("Previous unseen toot", "Ctrl-⬆️", () => previousUnseen(toot)),
+  navButton("Previous toot",             "⬆️", () => previousToot(toot)  ),
+  navButton("Next toot",                 "⬇️", () => nextToot(toot)      ),
+  navButton("Next unseen toot",     "Ctrl-⬇️", () => nextUnseen(toot)    ),
   H("div.contents",
     el => {
       regEffect(() => {
