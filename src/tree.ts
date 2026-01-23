@@ -180,10 +180,10 @@ const navButton = (text: HParam, key: HParam, onclick: () => void) =>
   H("button.menu-entry-with-key-hint", H("span", text), H("span", key), {onclick});
 
 const menuItems = (toot: Status): HParam => [
-  navButton("Previous unseen toot", "Ctrl-⬆️", () => previousUnseen(toot)),
-  navButton("Previous toot",             "⬆️", () => previousToot(toot)  ),
-  navButton("Next toot",                 "⬇️", () => nextToot(toot)      ),
-  navButton("Next unseen toot",     "Ctrl-⬇️", () => nextUnseen(toot)    ),
+  navButton("Previous unseen toot", "Ctrl-⬅️", () => previousUnseen(toot)),
+  navButton("Previous toot",             "⬅️", () => previousToot(toot)  ),
+  navButton("Next toot",                 "➡️", () => nextToot(toot)      ),
+  navButton("Next unseen toot",     "Ctrl-➡️", () => nextUnseen(toot)    ),
   H("div.contents",
     el => {
       regEffect(() => {

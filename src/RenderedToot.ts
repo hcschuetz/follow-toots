@@ -69,7 +69,7 @@ class RenderedToot extends HTMLElement {
             }, 100);
           }},
           this.#toggleSeenLabel,
-          H("span", "↩"),
+          H("span", "↩️"),
         ),
         this.#contextMenuItemContainer,
       ),
