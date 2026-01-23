@@ -9,44 +9,34 @@ import "./ContextMenu";
 
 export default
 class RenderedToot extends HTMLElement {
-  #prefixWrapper = H("span.contents.prefix");
-  set headerPrefix(hp: HParam) { reRenderInto(this.#prefixWrapper, hp); }
 
+  // parts modified by property setters:
+  #prefixWrapper = H("span.contents.prefix");
   #seenInput = H("input.seen", {
     type: "checkbox",
-    onchange: () => {
-      this.seen = this.seen; // trigger side effects of `set seen(...)`
-      this.onseenchange?.(new CustomEvent("seenchanged", {detail: this.seen}));
-    },
+    // trigger side effects of `set seen(...)`:
+    onchange: () => this.seen = this.seen,
     title: "Mark toot as seen/unseen"
   });
+  #dropDownMenu = H_("drop-down-menu");
+  #toggleSeenLabel = H("span");
+  #contextMenuItemContainer = H("div.contents");
+
+  set headerPrefix(hp: HParam) { reRenderInto(this.#prefixWrapper, hp); }
+
   get seen() { return this.#seenInput.checked }
   set seen(value: boolean) {
     this.#seenInput.checked = value;
-    this.#toggleMenuButton.textContent =
-      value ? "☐ Mark toot as unseen (↩)" : "☑ Mark toot as seen (↩)";
+    this.#toggleSeenLabel.textContent =
+      value ? "☐ Mark toot as unseen" : "☑ Mark toot as seen";
+    this.onseenchange?.(new CustomEvent("seenchanged", {detail: this.seen}));
   }
   onseenchange?: (ev: CustomEvent<boolean>) => unknown;
 
-  #dropDownMenu = H_("drop-down-menu");
   set dropDownMenuItems(menuItems: HParam) {
     reRenderInto(this.#dropDownMenu, menuItems);
   }
 
-  #toggleMenuButton = H("button",
-    {onclick: () => {
-      this.seen = !this.seen;
-      setTimeout(() => {
-        this.scrollIntoView({
-          // "start" would move it behind the sticky header
-          block: "center",
-          behavior: "smooth",
-        });
-      }, 100);
-    }},
-  );
-
-  #contextMenuItemContainer = H("div.contents");
   set contextMenuItems(menuItems: HParam) {
     reRenderInto(this.#contextMenuItemContainer, menuItems);
   }
@@ -67,7 +57,20 @@ class RenderedToot extends HTMLElement {
         onkeydown: ev => this.onkeydown?.(ev),
       },
       H_("context-menu",
-        this.#toggleMenuButton,
+        H("button.menu-entry-with-key-hint",
+          {onclick: () => {
+            this.seen = !this.seen;
+            setTimeout(() => {
+              this.scrollIntoView({
+                // "start" would move it behind the sticky header
+                block: "center",
+                behavior: "smooth",
+              });
+            }, 100);
+          }},
+          this.#toggleSeenLabel,
+          H("span", "↩"),
+        ),
         this.#contextMenuItemContainer,
       ),
       H("div.toot-head",
