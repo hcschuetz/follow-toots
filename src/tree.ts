@@ -176,7 +176,7 @@ function previousUnseen(toot: Status) {
   ));
 }
 
-const navButton = (text: string, key: string, onclick: () => void) =>
+const navButton = (text: HParam, key: HParam, onclick: () => void) =>
   H("button.menu-entry-with-key-hint", H("span", text), H("span", key), {onclick});
 
 const menuItems = (toot: Status): HParam => [
