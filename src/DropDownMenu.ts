@@ -1,6 +1,7 @@
 import H from "./H";
+// import style from "./DropDownMenu.css" with {type: "css"};
+// ...is not yet supported by the toolchain and so we use this work-around:
 import styleRaw from "./DropDownMenu.css?raw";
-
 const style = new CSSStyleSheet();
 style.replaceSync(styleRaw);
 
