@@ -1,8 +1,8 @@
 @import url(tree.css);
 
-:root {
+* {
   --node-gap: 0.5em;
-  --edge: 3px solid black;
+  --edge: 3px solid #333;
 }
 
 body {
