@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <title>Follow Toot</title>
-  <link rel="stylesheet" href="src/style.css">
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="src/style.css">
+  <link rel="stylesheet" href="src/tree-page.css">
 </head>
-<body class="tree">
+<body class="tree-page">
   <header class="tree-header">
     <nav id="nav"></nav>
 
@@ -51,23 +52,22 @@
         <label>
           Mode:
           <select id="display-mode">
-            <option value="hierarchical" selected>hierarchical</option>
-            <option value="chronological">chronological</option>
+            <option value="tree" selected>tree</option>
+            <option value="flat">flat</option>
           </select>
         </label>
         <label>
           Display unseen:
           <select id="display-unseen">
             <option value="full" selected>full</option>
-            <option value="header-only">header-only</option>
+            <option value="collapsed">collapsed</option>
           </select>
         </label>
         <label>
           Display seen:
           <select id="display-seen">
             <option value="full">full</option>
-            <option value="header-only" selected>header-only</option>
-            <option value="hidden">hidden</option>
+            <option value="collapsed" selected>collapsed</option>
           </select>
         </label>
         <label>

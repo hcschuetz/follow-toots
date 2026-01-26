@@ -1,0 +1,60 @@
+@scope (.tree) to (.node > :not(ul)) {
+  :scope {
+    --node-gap: 0.5em;
+    --indent: 2em;
+    --link-width: 1em;
+    --link-height: 1.2em;
+    --link-radius: 0.8em;
+    --edge: 2px solid black;
+  }
+  .node {
+    margin-top: var(--node-gap);
+
+    > ul {
+      margin: 0;
+      padding-left: var(--indent);
+      list-style: none;
+
+      > li {
+        position: relative;
+        /* The "hook" linking a node towards its parent: */
+        /* (Must be extended if this is not a first child. See below.) */
+        &::before {
+          content: "";
+          position: absolute;
+          top: calc(-1 * var(--node-gap));
+          right: 100%;
+          box-sizing: border-box;
+          width: var(--link-width);
+          height: var(--link-height);
+          border-bottom-left-radius: var(--link-radius);
+          border-bottom: var(--edge);
+          border-left: var(--edge);
+        }
+      }
+    }
+    /* Link to preceding element: */
+    + .node {
+      position: relative;
+      &::before {
+        content: "";
+        position: absolute;
+        top: calc(-1 * var(--node-gap));
+        bottom: 100%;
+        left: calc(var(--indent) - var(--link-width));
+        border-left: var(--edge);
+      }
+    }
+    /* Extend links from later siblings to the common parent: */
+    > ul > li:has(+ li)::after,
+    /* Also extend links from later siblings of the enclosing node: */
+    :has(+ .node) > ul > li::after {
+      content: "";
+      position: absolute;
+      top: calc(-1 * var(--node-gap));
+      bottom: 0;
+      left: calc(-1 * var(--link-width));
+      border-left: var(--edge);
+    }
+  }
+}

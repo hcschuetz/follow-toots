@@ -24,6 +24,7 @@ function regEffect(fn: () => void) {
 
 const db = await database;
 
+
 // The hash should have the format of a search query.
 // (We are not using the search query as this would cause
 // unnecessary page fetches for varying parameters and also
@@ -273,7 +274,7 @@ function extractThreads(tree: Tree): Thread {
 }
 
 function renderTootTree(): void {
-  const {ancestors, root, descendants} = details!;
+  const {root, descendants} = details!;
 
   // Building a recursive datastructure without recursion:
   // - Create subtree nodes for each toot and index them by an auxiliary map.
@@ -287,45 +288,43 @@ function renderTootTree(): void {
   // ... but extracting threads is recursive:
   const tree = extractThreads(id2subTree.get(root.id)!);
 
-  const descend = (thread: Thread, bridge: boolean): HTMLElement[] =>
-    thread.map(({toot, children}, i) => H("li",
-      el => {
-        el.classList.add(i === 0 ? "uplink-child" : "uplink-thread");
-        el.classList.add(bridge ? "bridge" : "no-bridge");
-      },
-      handleToot(
-        toot,
-        thread.length === 1 ? undefined :
-        H("span.thread-pos", `${i+1}/${thread.length}`),
-      ),
-      children.length === 0 ? null : H("ul.toot-list",
-        children.map((childThread, j) =>
-          descend(childThread, i < thread.length - 1 || j < children.length - 1)
+  function* descend(thread: Thread): Generator<HTMLElement, void, void> {
+    let i = 0;
+    for (const {toot, children} of thread) {
+      yield H("div.node",
+        handleToot(
+          toot,
+          thread.length === 1 ? undefined :
+          H("span.thread-pos", `${++i}/${thread.length}`),
         ),
-      ),
-    ));
-
-  const topLIs = descend(tree, false);
-  const rootLI = topLIs[0];
-  rootLI.classList.remove("uplink-child");
-  if (ancestors.length > 0) {
-    rootLI.classList.add("uplink-ancestors");
+        function*() {
+          if (children.length > 0) {
+            yield H("ul", function*() {
+              for (const child of children) {
+                yield H("li", descend(child));
+              }
+            });
+          }
+        }
+      );
+    }
   }
-  reRenderInto(descendantsEl, H("ul.toot-list", topLIs));
+
+  descendantsEl.classList.add("tree-root");
+  descendantsEl.classList.add("chrono");
+  reRenderInto(descendantsEl, descend(tree));
 }
 
 function renderTootList() {
   const {root, descendants} = details!;
   reRenderInto(descendantsEl,
-    H("ul.toot-list",
-      [root, ...descendants].map(toot => H("li", handleToot(toot))),
-    ),
+    [root, ...descendants].map(toot => H("div.node", handleToot(toot))),
   )
 }
 
-const displayModes = ["hierarchical", "chronological"] as const;
+const displayModes = ["tree", "flat"] as const;
 type DisplayMode = (typeof displayModes)[number]
-const displayModeSig = signal<DisplayMode>("hierarchical", {name: "displayMode"});
+const displayModeSig = signal<DisplayMode>("tree", {name: "displayMode"});
 
 // TODO nicer treatment of children vs. attributes vs. event handlers
 
@@ -371,9 +370,7 @@ function renderUnfollowed() {
 
 function renderAncestors() {
   reRenderInto(ancestorsEl,
-    H("ul.toot-list",
-      details!.ancestors.map(toot => H("li", handleToot(toot))),
-    ),
+    details!.ancestors.map(toot => H("div.node", handleToot(toot))),
   );
 }
 
@@ -446,11 +443,11 @@ async function renderDetails() {
     tootTreeEl.classList.remove(...displayModes);
     tootTreeEl.classList.add(displayMode);
     switch (displayMode) {
-      case "hierarchical": {
+      case "tree": {
         renderTootTree();
         break;
       }
-      case "chronological": {
+      case "flat": {
         renderTootList();
         break;
       }

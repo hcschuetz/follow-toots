@@ -1,0 +1,307 @@
+@import url(tree.css);
+
+:root {
+  --node-gap: 0.5em;
+  --edge: 3px solid black;
+}
+
+body {
+  margin: 1em 0 0 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  header.tree-header {
+    display: contents;
+
+    > * {
+      padding-inline: 1rem;
+    }
+
+    #not-following,
+    #app {
+      position: sticky;
+      top: 0;
+      z-index: 1; /* stay above even relatively positioned content */
+
+      box-shadow: 0 5px 5px #aaa8;
+      padding: 0.5em 1em;
+      background-color: #fff;
+
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+
+      .tree-head-author {
+        font-size: larger;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5em;
+
+        img#tree-head-avatar {
+          width: 1.5em;
+          height: 1.5em;
+          border-radius: 20%;
+        }
+        #tree-head-name {
+          font-weight: bold;
+        }
+      }
+      .tree-head-statistics {
+        display: flex;
+        gap: 1em;
+      }
+      #user-stats {
+        display: flex;
+        gap: 0.5em;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        margin-bottom: -8px;
+        span {
+          display: flex;
+          gap: 2px;
+          align-items: center;
+          overflow-wrap: normal;
+          img {
+            width: 1.2em;
+            height: 1.2em;
+            border-radius: 20%;
+          }
+        }
+      }
+      .tree-head-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5em;
+      }
+      .tree-head-choose-mode {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5em 1em;
+      }
+    }
+  }
+
+  /* Special case: link the root to its most recent ancestor (if there is one) */
+  .tree:has(#ancestors .node) #descendants > .node:first-child {
+    position: relative;
+    &::before {
+      content: "";
+      position: absolute;
+      top: calc(-2 * var(--node-gap));
+      bottom: 100%;
+      left: calc(var(--indent) - var(--link-width));
+      border-left: var(--edge);
+    }
+  }
+
+  /* If selected by the user, hide bodies of unseen toots: */
+  &:has(#display-unseen > option[value="collapsed"]:checked) .toot:has(input.seen:not(:checked)) .toot-full-body,
+  /* ... and the same for seen toots: */
+  &:has(#display-seen   > option[value="collapsed"]:checked) .toot:has(input.seen:checked      ) .toot-full-body {
+    display: none;
+  }
+}
+
+#toot-tree {
+  flex-grow: 1;
+  background-color: #aaa;
+
+  #ancestors {
+    /* Apparently we need a little vertical padding so that the toot margins
+     * get some "resistance".
+     */
+    padding: 0.1px 1em;
+    background-color: #888;
+  }
+
+  #descendants {
+    padding-inline: 1em;
+  }
+
+  &:empty {
+    display: none;
+  }
+
+  /* TODO remove .toot-list */
+
+  .node {
+    margin-block: var(--node-gap);
+  }
+
+  .toot {
+    box-sizing: border-box;
+    max-width: var(--page-width);
+    border-radius: 0.5em;
+    background-color: #ddd;
+    &:focus {
+      outline: var(--edge);
+    }
+    .menu-entry-with-key-hint {
+      display: flex;
+      justify-content: space-between;
+    }
+    .open-link {
+      display: inline-flex;
+      gap: 0.5em;
+      align-items: center;
+
+      .link-icon {
+        width: 1.2rem;
+        height: 1.2rem;
+      }
+    }
+    .toot-head {
+      border-radius: 0.5em;
+      padding: 5px 1em;
+
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5em;
+
+      .thread-pos {
+        border-radius: 5px;
+        padding-inline: 5px;
+        font-size: smaller;
+        background-color: #eee;
+      }
+      drop-down-menu:empty {
+        display: none;
+      }
+      .visibility {
+        padding: 0 0.5em;
+        border-radius: 1lh;
+        background-color: "#cc0";
+      }
+      img.toot-author-avatar {
+        height: 1.5em;
+        width: 1.5em;
+        border-radius: 20%;
+      }
+      .toot-author {
+        font-weight: bold;
+      }
+    }
+    &.visibility-public > .toot-head > .visibility {
+      display: none;
+    }
+    > .toot-head > .visibility {
+      background-color: #ff8;
+    }
+    /* TODO also distinguish visibility "private" from "direct"? */
+    .toot-full-body {
+      border-bottom-left-radius: 0.5em;
+      border-bottom-right-radius: 0.5em;
+      padding: 5px 1em;
+      background-color: #fff;
+    }
+    .toot-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+
+      .toot-content {
+        p {
+          margin-block: 0.3em;
+          &:first-child {
+            margin-top: 0;
+          }
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+        /* TODO make these hacks configurable?: */
+        span.ellipsis::after {
+          content: "...";
+        }
+        span.invisible {
+          display: inline-block;
+          width: 0;
+          text-wrap-mode: nowrap;
+          overflow-x: hidden;
+        }
+      }
+      details.sensitive {
+        summary::after {
+          content: "Show sensitive media";
+        }
+        &[open] {
+          summary::after {
+            content: "Hide sensitive media";
+          }
+        }
+      }
+      ul.attachments {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        gap: 1em;
+        list-style: none;
+        > li.attachment {
+          display: flex;
+          flex-direction: column;
+          align-items: start;
+          img.preview {
+            max-width: 100%;
+            border: 1px solid #888;
+          }
+        }
+      }
+      div.poll {
+        ul.poll {
+          margin: 0;
+          border-radius: 0.5em;
+          padding: 0.5em;
+          background-color: #eee;
+          display: inline-grid;
+          grid-template-columns: auto auto;
+          column-gap: 1em;
+          li.poll-option {
+            display: contents;
+            span.poll-option-votes {
+              justify-self: right;
+            }
+          }
+        }
+        .poll-votes-count {
+          font-size: smaller
+        }
+        .poll-expiry {
+          font-size: smaller;
+          &.poll-ongoing::before {
+            color: #080;
+            content: "☐ ";
+          }
+          &.poll-expired::before {
+            color: #f00;
+            content: "☑ ";
+          }
+        }
+      }
+      .card {
+        box-sizing: border-box;
+        width: 100%;
+        align-self: flex-start;
+        border: 1px solid #888;
+        border-radius: 0.5em;
+        padding: 0.5em;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5em;
+        .card-title {
+          font-weight: bold;
+          font-size: larger;
+        }
+        .card-image {
+          max-width: 100%;
+        }
+      }
+    }
+  }
+}
