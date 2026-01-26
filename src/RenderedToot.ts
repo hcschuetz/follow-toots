@@ -66,6 +66,7 @@ class RenderedToot extends HTMLElement {
                 block: "center",
                 behavior: "smooth",
               });
+              this.focus();
             }, 100);
           }},
           this.#toggleSeenLabel,
