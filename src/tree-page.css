@@ -98,11 +98,13 @@ body {
     }
   }
 
-  /* If selected by the user, hide bodies of unseen toots: */
-  &:has(#display-unseen > option[value="collapsed"]:checked) .toot:has(input.seen:not(:checked)) .toot-full-body,
-  /* ... and the same for seen toots: */
-  &:has(#display-seen   > option[value="collapsed"]:checked) .toot:has(input.seen:checked      ) .toot-full-body {
-    display: none;
+  /* Collapse toots as selected by the user: */
+  &:has(#collapse > option[value="all" ]:checked) rendered-toot,
+  &:has(#collapse > option[value="seen"]:checked) rendered-toot:has(input.seen:checked) {
+    .toot-full-body {
+      outline: 2px solid red;
+      display: none;
+    }
   }
 }
 
