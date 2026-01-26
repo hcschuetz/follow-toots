@@ -15,6 +15,7 @@ import { findCircular, findLastCircular } from './findCircular';
 import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 import ContextMenu from './ContextMenu';
 import Registry from './Registry';
+import { menuButtonWithKey } from './menuButton';
 
 const registry = new Registry();
 
@@ -177,14 +178,11 @@ function previousUnseen(toot: Status) {
   ));
 }
 
-const navButton = (text: HParam, key: HParam, onclick: () => void) =>
-  H("button.menu-entry-with-key-hint", H("span", text), H("span", key), {onclick});
-
 const menuItems = (toot: Status): HParam => [
-  navButton("Previous unseen toot", "Ctrl-⬅️", () => previousUnseen(toot)),
-  navButton("Previous toot",             "⬅️", () => previousToot(toot)  ),
-  navButton("Next toot",                 "➡️", () => nextToot(toot)      ),
-  navButton("Next unseen toot",     "Ctrl-➡️", () => nextUnseen(toot)    ),
+  menuButtonWithKey("Previous unseen toot", ["Ctrl", "⬅"], () => previousUnseen(toot)),
+  menuButtonWithKey("Previous toot",        [        "⬅"], () => previousToot(toot)  ),
+  menuButtonWithKey("Next toot",            [        "➡"], () => nextToot(toot)      ),
+  menuButtonWithKey("Next unseen toot",     ["Ctrl", "➡"], () => nextUnseen(toot)    ),
   H("div.contents",
     el => {
       regEffect(() => {
@@ -230,7 +228,7 @@ const tootKeyHandler = (toot: Status, seenSig: Signal<boolean>) => (ev: Keyboard
       if (ev.ctrlKey) previousUnseen(toot);
       else previousToot(toot);
       break;
-    case "Enter":
+    case " ":
       seenSig.value = !seenSig.value;
       break;
     default: return;

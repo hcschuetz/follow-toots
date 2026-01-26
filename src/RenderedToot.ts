@@ -6,6 +6,7 @@ import sanitize from "./sanitize";
 import formatDate from "./formatDate";
 import "./DropDownMenu";
 import "./ContextMenu";
+import { menuButtonWithKey } from "./menuButton";
 
 export default
 class RenderedToot extends HTMLElement {
@@ -53,8 +54,10 @@ class RenderedToot extends HTMLElement {
         onkeydown: ev => this.onkeydown?.(ev),
       },
       H_("context-menu",
-        H("button.menu-entry-with-key-hint",
-          {onclick: () => {
+        menuButtonWithKey(
+          this.#toggleSeenLabel,
+          ["Space"],
+          () => {
             this.seen = !this.seen;
             setTimeout(() => {
               this.scrollIntoView({
@@ -64,9 +67,7 @@ class RenderedToot extends HTMLElement {
               });
               this.focus();
             }, 100);
-          }},
-          this.#toggleSeenLabel,
-          H("span", "↩️"),
+          },
         ),
         this.#contextMenuItemContainer,
       ),

@@ -197,6 +197,19 @@ code {
   text-decoration: line-through;
 }
 
+.menu-entry-with-key-hint {
+  display: flex;
+  row-gap: 1em;
+  justify-content: space-between;
+}
+
+.keyboard {
+  border-radius: 3px;
+  padding-inline: 2px;
+  background-color: #eee;
+  color: #000;
+}
+
 .warn {
   background-color: #ff0;
   margin-inline: -3px;

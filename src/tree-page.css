@@ -141,10 +141,6 @@ body {
     &:focus {
       outline: var(--edge);
     }
-    .menu-entry-with-key-hint {
-      display: flex;
-      justify-content: space-between;
-    }
     .open-link {
       display: inline-flex;
       gap: 0.5em;
