@@ -102,7 +102,6 @@ body {
   &:has(#collapse > option[value="all" ]:checked) rendered-toot,
   &:has(#collapse > option[value="seen"]:checked) rendered-toot:has(input.seen:checked) {
     .toot-full-body {
-      outline: 2px solid red;
       display: none;
     }
   }
