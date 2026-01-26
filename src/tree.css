@@ -48,7 +48,7 @@
     /* Extend links from later siblings to the common parent: */
     > ul > li:has(+ li)::after,
     /* Also extend links from later siblings of the enclosing node: */
-    :has(+ .node) > ul > li::after {
+    &:has(+ .node) > ul > li::after {
       content: "";
       position: absolute;
       top: calc(-1 * var(--node-gap));
