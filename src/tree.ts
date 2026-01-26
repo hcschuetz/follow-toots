@@ -322,9 +322,7 @@ function renderTootList() {
   )
 }
 
-const displayModes = ["tree", "flat"] as const;
-type DisplayMode = (typeof displayModes)[number]
-const displayModeSig = signal<DisplayMode>("tree", {name: "displayMode"});
+const displayTreeSig = signal<boolean>(true, {name: "display-tree"});
 
 // TODO nicer treatment of children vs. attributes vs. event handlers
 
@@ -355,8 +353,8 @@ function renderTreeHead() {
   fill("#all-unseen", {onclick: () => markAllAsUnseen()});
   fill("#reload", {onclick: () => fetchTree(instance, id)});
   fill("#remove", {onclick: () => deleteTree(overview!)});
-  fill("#display-mode", {"onchange": ev =>
-    displayModeSig.value = (ev.currentTarget as HTMLSelectElement).value as DisplayMode
+  fill("#display-tree", {"onchange": ev =>
+    displayTreeSig.value = (ev.currentTarget as HTMLInputElement).checked
   });
 }
 
@@ -439,22 +437,13 @@ async function renderDetails() {
   regEffect(() => {
     toots.length = details!.ancestors.length;
 
-    const displayMode = displayModeSig.value;
-    tootTreeEl.classList.remove(...displayModes);
-    tootTreeEl.classList.add(displayMode);
-    switch (displayMode) {
-      case "tree": {
-        renderTootTree();
-        break;
-      }
-      case "flat": {
-        renderTootList();
-        break;
-      }
-      default: {
-        descendantsEl.replaceChildren("Oops");
-        break;
-      }
+    const displayTree = displayTreeSig.value;
+    if (displayTree) {
+      tootTreeEl.classList.add("tree");
+      renderTootTree();
+    } else {
+      tootTreeEl.classList.remove("tree");
+      renderTootList();
     }
   });
 
