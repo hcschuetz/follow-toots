@@ -41,16 +41,12 @@ class RenderedToot extends HTMLElement {
     reRenderInto(this.#contextMenuItemContainer, menuItems);
   }
 
-  // TODO make this element focussable instead of delegating to the child?
-  focus = (options?: FocusOptions) =>
-    (this.firstElementChild as HTMLElement).focus(options);
-
   // Without a 0-parameter constructor we cannot create instances in HTML,
   // but only in JS.
   constructor(toot: Status) {
     super();
     const {account, poll, card} = toot;
-    this.append(H("div",
+    reRenderInto(this as HTMLElement,
       {
         className: `toot visibility-${toot.visibility}`,
         tabIndex: 0,
@@ -215,7 +211,7 @@ class RenderedToot extends HTMLElement {
         body.classList.add("toot-full-body");
         return body;
       },
-    ));
+    );
   }
 }
 

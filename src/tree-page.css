@@ -99,8 +99,8 @@ body {
   }
 
   /* Collapse toots as selected by the user: */
-  &:has(#collapse > option[value="all" ]:checked) rendered-toot,
-  &:has(#collapse > option[value="seen"]:checked) rendered-toot:has(input.seen:checked) {
+  &:has(#collapse > option[value="all" ]:checked) .toot,
+  &:has(#collapse > option[value="seen"]:checked) .toot:has(input.seen:checked) {
     .toot-full-body {
       display: none;
     }
@@ -134,7 +134,7 @@ body {
   }
 
   .toot {
-    box-sizing: border-box;
+    display: block;
     max-width: var(--page-width);
     border-radius: 0.5em;
     background-color: #ddd;
