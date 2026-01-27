@@ -34,12 +34,14 @@ async function showTokens() {
   reRenderInto(accessTokenGridEl!,
     H("span.bold", "Instance"),
     H("span.bold", "Token"),
+    H("span.view-all", "👁"),
     removeAllButton,
     H("span.dummy"),
 
-    ...data.flatMap(({instance, token}) => [
+    ...data.map(({instance, token}) => H("div.contents.row",
       H("span.access-instance", instance),
       H("span.access-token", token),
+      H("span.view", "👁"),
       H("button", "✗ Remove", {async onclick() {
         if (confirm(`Really remove token for "${instance}"?`))
         await db.delete("accessTokens", instance);
@@ -50,10 +52,11 @@ async function showTokens() {
         tokenInput.value = token;
         setSaveDisabled();
       }}),
-    ]),
+    )),
 
     instanceInput,
     tokenInput,
+    H("span.dummy"),
     saveButton,
     H("span.dummy"),  )
 }

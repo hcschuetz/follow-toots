@@ -50,7 +50,7 @@ body.overview:has(#hide-all-seen:checked) .all-seen {
   overflow-x: auto;
   padding-bottom: 10px;
   display: grid;
-  grid-template-columns: 2fr 3fr max-content max-content;
+  grid-template-columns: 2fr 3fr repeat(3, max-content);
   gap: 3px 0.5em;
   align-items: center;
 
@@ -60,6 +60,22 @@ body.overview:has(#hide-all-seen:checked) .all-seen {
     overflow-x: auto;
     font-size: smaller;
   }
+  .access-token {
+    position: relative;
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: grey;
+    }
+  }
+  &:has(.view-all:hover),
+  .row:has(.view:hover) {
+    .access-token::after {
+      content: none;
+    }
+  }
+
   input {
     font-size: smaller;
   }
