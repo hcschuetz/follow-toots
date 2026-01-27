@@ -128,55 +128,74 @@
     as long as they are available on your instance.
   </p>
   <p>
-    To get an access token, go to
-    <code>https://<em>&lt;your instance&gt;</em>/settings/applications</code>
-    and click the "New application" button.
-    (I assume that you are already logged in.)
+    To get an access token enter the name of your instance
+    into the instance-input field below
+    and click the "Acquire" button.
+    (Leave the token-input field empty.)
+    It will take you to the authorization page of your instance.
+    There you can authorize this app to read toots ("posts")
+    on your behalf.
+    You will come back to this page here
   </p>
-  <p>
-    On the page that opens, fill in the fields:
-  </p>
-  <ul>
-    <li>
-      The application name might be something like "Follow Toots".
-      This is for you to recognize the token later, e.g., if you want
-      to remove it.
-    </li>
-    <li>
-      You may enter <code id="app-url"></code> as the application website
-      as a reminder.
-      <script>
-        document.querySelector("#app-url").textContent =
-          new URL(".", location.href);
-      </script>
-    </li>
-    <li>
-      Leave the "Redirect URI" field unchanged.
-      (<code>urn:ietf:wg:oauth:2.0:oob</code>)
-    </li>
-    <li>
-      Check "read:statuses" and uncheck all other scopes.
-      ("Status" is the technical term for "toot".)
-    </li>
-    <li>
-      Press the submit button at the bottom of the page.
-    </li>
-  </ul>
-  <p>
-    Now you see a list of applications for which you have created
-    access tokens.  Click the newly created one.
-  </p>
-  <p>
-    The page that opens lets you edit the values you have provided.
-    But we are only interested in the field "Your access token".
-    Use this value as the token for your instance.
-  </p>
-  <p>
-    Finally, if you trust this web application here not to abuse the
-    access to your mastodon account (read-only and limited to toots),
-    copy the instance name and the access token to the input fields
-    at the bottom of the table and press the "Save" button.
-  </p>
+
+  <details style="border-radius: 0.5em; padding: 0.5em; background: #0002;">
+    <summary><b>Authorization for development</b></summary>
+
+    <p>
+      Mastodon also provides a way to get access tokens for development
+      purposes.
+    </p>
+    <p>
+      Go to
+      <code>https://<em>&lt;your instance&gt;</em>/settings/applications</code>
+      and click the "New application" button.
+      (I assume that you are already logged in.)
+    </p>
+    <p>
+      On the page that opens, fill in the fields:
+    </p>
+    <ul>
+      <li>
+        The application name might be something like "Follow Toots Dev".
+        This is for you to recognize the token later, e.g., if you want
+        to revoke it.
+      </li>
+      <li>
+        You may enter <code id="app-url"></code> as the application website
+        as a reminder.
+        <script>
+          document.querySelector("#app-url").textContent =
+            new URL(".", location.href);
+        </script>
+      </li>
+      <li>
+        Leave the "Redirect URI" field unchanged.
+        (<code>urn:ietf:wg:oauth:2.0:oob</code>)
+      </li>
+      <li>
+        Check "read:statuses" and uncheck all other scopes.
+        ("Status" is the technical term for "toot".)
+      </li>
+      <li>
+        Press the submit button at the bottom of the page.
+      </li>
+    </ul>
+    <p>
+      Now you see a list of applications for which you have created
+      access tokens.  Click the newly created one.
+    </p>
+    <p>
+      The page that opens lets you edit the values you have provided.
+      But we are only interested in the field "Your access token".
+      Use this value as the token for your instance.
+    </p>
+    <p>
+      Finally, if you trust this web application here not to abuse the
+      access to your mastodon account (read-only and limited to toots),
+      copy the instance name and the access token to the input fields
+      at the bottom of the table and press the "Save" button.
+    </p>
+  </details>
 
   <div id="access-tokens"></div>
 
@@ -190,11 +209,6 @@
       The access tokens will be stored persistently in your browser.
       Remove them if you want to make sure that they cannot be abused.
       You can also invalidate tokens in the settings of your mastodon account.
-    </li>
-    <li>
-      A more refined version of this application might
-      provide a UI involving your mastodon instance to provide
-      access interactively.
     </li>
   </ul>
 

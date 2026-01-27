@@ -28,6 +28,11 @@ async function updated() {
   await showTokens();
 }
 
+// Did we just return from an authorization roundtrip?
+await continueAcquireRoundtrip();
+
+const acquireButton = H("button", "Acquire");
+
 async function showTokens() {
   const data = await db.getAll("accessTokens");
   removeAllButton.disabled = data.length === 0,
@@ -43,13 +48,17 @@ async function showTokens() {
       H("span.access-token", token),
       H("span.view", "👁"),
       H("button", "✗ Remove", {async onclick() {
-        if (confirm(`Really remove token for "${instance}"?`))
-        await db.delete("accessTokens", instance);
-        await updated();
+        if (confirm(`Really remove token for "${instance}"?`)) {
+          await db.delete("accessTokens", instance);
+          window.sessionStorage.removeItem("credentials:" + instance);
+          await updated();
+        }
       }}),
       H("button", "Edit", {onclick() {
         instanceInput.value = instance;
         tokenInput.value = token;
+        // to enable the acquireButton:
+        instanceInput.dispatchEvent(new InputEvent("input"));
         setSaveDisabled();
       }}),
     )),
@@ -58,7 +67,8 @@ async function showTokens() {
     tokenInput,
     H("span.dummy"),
     saveButton,
-    H("span.dummy"),  )
+    acquireButton,
+  );
 }
 
 await showTokens();
@@ -105,3 +115,115 @@ function handleEnter(ev: KeyboardEvent) {
 
 instanceInput.addEventListener("keypress", handleEnter);
 tokenInput.addEventListener("keypress", handleEnter);
+
+// -----------------------------------------------------
+// Acquire a token directly from the instance:
+
+const scope = "read:statuses";
+
+async function acquireToken() {
+  const instance = instanceInput.value;
+  if (!instance) {
+    alert("No instance given");
+    return;
+  }
+
+  const response = await fetch(`https://${instance}/api/v1/apps`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      client_name: "Follow Toots",
+      redirect_uris: document.location.href,
+      scopes: scope,
+      website: document.location.href,
+    }),
+  });
+
+  if (!response.ok) {
+    alert("Application registration failed.");
+    return;
+  }
+
+  const {client_id, client_secret} = await response.json();
+
+  const credentials = JSON.stringify({client_id, client_secret});
+  window.sessionStorage.setItem("credentials:" + instance, credentials);
+
+  // Navigate to the instance's authorization page.
+  // If the user authorizes the access, we will come back to this page.
+  // This is detected and handled in function `continueAcquireRoundtrip()`.
+  document.location =
+    `https://${instance}/oauth/authorize?` +
+    new URLSearchParams({
+      response_type: "code",
+      client_id,
+      redirect_uri: document.location.href,
+      scope,
+      state: instance,
+      lang: "en",
+    },
+  );
+}
+
+function disable_acquire_button() {
+  acquireButton.disabled = !instanceInput.value;
+}
+instanceInput.addEventListener("input", disable_acquire_button);
+disable_acquire_button();
+
+acquireButton.addEventListener("click", acquireToken);
+
+async function continueAcquireRoundtrip() {
+  const searchParams = new URLSearchParams(document.location.search);
+  const instance = searchParams.get("state");
+  const code = searchParams.get("code");
+  if (!(instance && code)) return;
+  const credentials = window.sessionStorage.getItem("credentials:" + instance);
+  if (!credentials) {
+    alert("Credentials missing");
+    return;
+  }
+  const {client_id, client_secret} = JSON.parse(credentials);
+  if (!(client_id && client_secret)) {
+    alert("Credentials not parseable");
+    return;
+  }
+  const response = await fetch(`https://${instance}/oauth/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      grant_type: "authorization_code",
+      client_id,
+      client_secret,
+      // There's no more redirection going on.  Still the redirect_uri
+      // must be provided to make the OAuth service happy.
+      redirect_uri: document.location.href,
+      code,
+    }),
+  });
+  if (!response.ok) {
+    alert(`Could not get a token from ${instance}`);
+    return;
+  }
+  const {token_type, access_token} = await response.json();
+
+  if (token_type !== "Bearer") {
+    alert(`unexpected token type: ${token_type}`);
+    return;
+  }
+  // We might also check that the scope is as expected.
+
+  await db.put("accessTokens", {instance, token: access_token});
+
+  // Broadcasting is sufficient.  Calling updated() and thus showTokens()
+  // is not needed since the latter will be called anyway.
+  channel.postMessage(null);
+
+  window.history.replaceState({}, "", document.location.pathname.split("/").at(-1));
+  accessTokenGridEl.scrollIntoView({behavior: "smooth", block: "center"});
+  alert(`Saved new access token for "${instance}".`);
+}
