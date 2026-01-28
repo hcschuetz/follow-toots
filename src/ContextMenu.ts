@@ -29,9 +29,17 @@ class ContextMenu extends HTMLElement {
     this.open = ev => {
       if (ContextMenu.disabled) return;
       ev.preventDefault();
-      menu.style.left = ev.clientX + "px";
-      menu.style.top = ev.clientY + "px";
       menu.classList.add("open");
+      menu.style.left = (
+        ev.clientX + menu.offsetWidth <= window.innerWidth ? ev.clientX :
+        ev.clientX >= menu.offsetWidth ? ev.clientX - menu.offsetWidth :
+        Math.max(0, window.innerWidth - menu.offsetWidth)
+      ) + "px";
+      menu.style.top = (
+        ev.clientY + menu.offsetHeight <= window.innerHeight ? ev.clientY :
+        ev.clientY >= menu.offsetHeight ? ev.clientY - menu.offsetHeight :
+        Math.max(0, window.innerHeight - menu.offsetHeight)
+      ) + "px";
       menu.focus();
       menu.onkeydown = ({key}) => {if (key === "Escape") this.close();};
       document.addEventListener("click", this.close);
