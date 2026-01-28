@@ -1,7 +1,5 @@
 .context-menu {
   position: fixed;
-  top: 100;
-  left: 100;
   width: max-content;
   z-index: 1000;
   display: none;
