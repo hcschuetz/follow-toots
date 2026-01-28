@@ -6,8 +6,8 @@ import sanitize from "./sanitize";
 import formatDate from "./formatDate";
 import "./DropDownMenu";
 import "./ContextMenu";
-import { menuButtonWithKey } from "./menuButton";
 import type ContextMenu from "./ContextMenu";
+import type DropDownMenu from "./DropDownMenu";
 
 export default
 class RenderedToot extends HTMLElement {
@@ -20,25 +20,18 @@ class RenderedToot extends HTMLElement {
     onchange: () => this.seen = this.seen,
     title: "Mark toot as seen/unseen"
   });
-  #dropDownMenu = H_("drop-down-menu");
-  #toggleSeenLabel = H("span");
 
   set headerPrefix(hp: HParam) { reRenderInto(this.#prefixWrapper, hp); }
 
   get seen() { return this.#seenInput.checked }
   set seen(value: boolean) {
     this.#seenInput.checked = value;
-    this.#toggleSeenLabel.textContent =
-      value ? "☐ Mark toot as unseen" : "☑ Mark toot as seen";
     this.onseenchange?.(new CustomEvent("seenchanged", {detail: this.seen}));
   }
   onseenchange?: (ev: CustomEvent<boolean>) => unknown;
 
-  set dropDownMenuItems(menuItems: HParam) {
-    reRenderInto(this.#dropDownMenu, menuItems);
-  }
-
-  contextMenuItemProvider?: (toot: Status) => HParam;
+  dropDownMenuItemProvider?: (toot: Status, el: RenderedToot) => HParam;
+  contextMenuItemProvider?: (toot: Status, el: RenderedToot) => HParam;
 
   // Without a 0-parameter constructor we cannot create instances in HTML,
   // but only in JS.
@@ -55,29 +48,21 @@ class RenderedToot extends HTMLElement {
         menuEl => {
           const menu = menuEl as ContextMenu;
           menu.onopen = () => reRenderInto(menu,
-            menuButtonWithKey(
-              this.#toggleSeenLabel,
-              ["Space"],
-              () => {
-                this.seen = !this.seen;
-                setTimeout(() => {
-                  this.scrollIntoView({
-                    // "start" would move it behind the sticky header
-                    block: "center",
-                    behavior: "smooth",
-                  });
-                  this.focus();
-                }, 100);
-              },
-            ),
-            H("div.contents", this.contextMenuItemProvider?.(toot)),
+            this.contextMenuItemProvider?.(toot, this),
           );
         }
       ),
       H("div.toot-head",
         this.#prefixWrapper,
         this.#seenInput,
-        this.#dropDownMenu,
+        H_("drop-down-menu",
+          menuEl => {
+            const menu = menuEl as DropDownMenu;
+            menu.onopen = () => reRenderInto(menu,
+              this.dropDownMenuItemProvider?.(toot, this),
+            );
+          }
+        ),
         H("span.visibility", toot.visibility),
         toot.edited_at ? [
           H("span.toot-created.line-through", formatDate(toot.created_at)),

@@ -178,7 +178,24 @@ function previousUnseen(toot: Status) {
   ));
 }
 
-const menuItems = (toot: Status): HParam => [
+const menuItems = (toot: Status, el: RenderedToot): HParam => [
+  menuButtonWithKey(
+    overview!.seenIds.has(versionId(toot)) ? "☐ Mark toot as unseen" : "☑ Mark toot as seen",
+    ["Space"],
+    () => {
+      const sig = seenSignals.get(versionId(toot));
+      if (!sig) return;
+      sig.value = !sig.value;
+      setTimeout(() => {
+        el.scrollIntoView({
+          // "start" would move it behind the sticky header
+          block: "center",
+          behavior: "smooth",
+        });
+        el.focus();
+      }, 100);
+    },
+  ),
   menuButtonWithKey("Previous unseen toot", ["Ctrl", "⬅"], () => previousUnseen(toot)),
   menuButtonWithKey("Previous toot",        [        "⬅"], () => previousToot(toot)  ),
   menuButtonWithKey("Next toot",            [        "➡"], () => nextToot(toot)      ),
@@ -421,7 +438,7 @@ async function renderDetails() {
     const seenSig = seenSignals.get(versionId(toot))!;
     const tootEl = renderInto(new RenderedToot(toot), {
       contextMenuItemProvider: menuItems,
-      dropDownMenuItems: menuItems(toot),
+      dropDownMenuItemProvider: menuItems,
       onseenchange: ev => seenSig.value = ev.detail,
       onkeydown: tootKeyHandler(toot, seenSig),
     });

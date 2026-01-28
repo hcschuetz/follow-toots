@@ -9,6 +9,8 @@ export default
 class DropDownMenu extends HTMLElement {
   close: (ev: PointerEvent) => unknown;
 
+  onopen?: () => void;
+
   constructor() {
     super();
     const details =
@@ -23,6 +25,7 @@ class DropDownMenu extends HTMLElement {
     shadowRoot.append(details);
     details.ontoggle = () => {
       if (details.open) {
+        this.onopen?.();
         details.onkeydown = ({key}) => {
           if (key === "Escape") {
             details.open = false;

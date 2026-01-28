@@ -166,9 +166,6 @@ body {
         font-size: smaller;
         background-color: #eee;
       }
-      drop-down-menu:empty {
-        display: none;
-      }
       .visibility {
         padding: 0 0.5em;
         border-radius: 1lh;
