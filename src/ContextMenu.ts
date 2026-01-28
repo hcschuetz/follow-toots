@@ -2,6 +2,7 @@ import H from "./H";
 // import style from "./ContextMenu.css" with {type: "css"};
 // ...is not yet supported by the toolchain and so we use this work-around:
 import styleRaw from "./ContextMenu.css?raw";
+import asgn from "./asgn";
 const style = new CSSStyleSheet();
 style.replaceSync(styleRaw);
 
@@ -30,16 +31,18 @@ class ContextMenu extends HTMLElement {
       if (ContextMenu.disabled) return;
       ev.preventDefault();
       menu.classList.add("open");
-      menu.style.left = (
-        ev.clientX + menu.offsetWidth <= window.innerWidth ? ev.clientX :
-        ev.clientX >= menu.offsetWidth ? ev.clientX - menu.offsetWidth :
-        Math.max(0, window.innerWidth - menu.offsetWidth)
-      ) + "px";
-      menu.style.top = (
-        ev.clientY + menu.offsetHeight <= window.innerHeight ? ev.clientY :
-        ev.clientY >= menu.offsetHeight ? ev.clientY - menu.offsetHeight :
-        Math.max(0, window.innerHeight - menu.offsetHeight)
-      ) + "px";
+      asgn(menu.style, {
+        left: (
+          ev.clientX + menu.offsetWidth <= window.innerWidth ? ev.clientX :
+          ev.clientX >= menu.offsetWidth ? ev.clientX - menu.offsetWidth :
+          Math.max(0, window.innerWidth - menu.offsetWidth)
+        ) + "px",
+        top: (
+          ev.clientY + menu.offsetHeight <= window.innerHeight ? ev.clientY :
+          ev.clientY >= menu.offsetHeight ? ev.clientY - menu.offsetHeight :
+          Math.max(0, window.innerHeight - menu.offsetHeight)
+        ) + "px",
+      });
       menu.focus();
       menu.onkeydown = ev => { if (ev.key === "Escape") this.close(); };
       document.addEventListener("click", this.close);
