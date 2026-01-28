@@ -1,4 +1,4 @@
-import H from "./H";
+import H, { reRenderInto, type HParam } from "./H";
 // import style from "./ContextMenu.css" with {type: "css"};
 // ...is not yet supported by the toolchain and so we use this work-around:
 import styleRaw from "./ContextMenu.css?raw";
@@ -20,7 +20,7 @@ class ContextMenu extends HTMLElement {
   open: (ev: PointerEvent) => unknown;
   close: () => unknown;
 
-  onopen?: () => void;
+  itemProvider?: () => HParam;
 
   constructor() {
     super();
@@ -34,7 +34,7 @@ class ContextMenu extends HTMLElement {
       ContextMenu.current?.close();
       ContextMenu.current = this;
       if (ContextMenu.disabled) return;
-      this.onopen?.();
+      reRenderInto(this, this.itemProvider?.());
       ev.preventDefault();
       menu.classList.add("open");
       asgn(menu.style, {
@@ -60,6 +60,7 @@ class ContextMenu extends HTMLElement {
 
     this.close = () => {
       ContextMenu.current = undefined;
+      this.replaceChildren();
       menu.classList.remove("open");
       document.removeEventListener("click", this.close);
       document.removeEventListener("contextmenu", this.close);

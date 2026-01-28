@@ -4,10 +4,8 @@ import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
 import sanitize from "./sanitize";
 import formatDate from "./formatDate";
-import "./DropDownMenu";
-import "./ContextMenu";
-import type ContextMenu from "./ContextMenu";
-import type DropDownMenu from "./DropDownMenu";
+import ContextMenu from "./ContextMenu";
+import DropDownMenu from "./DropDownMenu";
 
 export default
 class RenderedToot extends HTMLElement {
@@ -20,6 +18,9 @@ class RenderedToot extends HTMLElement {
     onchange: () => this.seen = this.seen,
     title: "Mark toot as seen/unseen"
   });
+  #toot: Status;
+  #dropDownMenu = new DropDownMenu();
+  #contextMenu = new ContextMenu();
 
   set headerPrefix(hp: HParam) { reRenderInto(this.#prefixWrapper, hp); }
 
@@ -30,13 +31,19 @@ class RenderedToot extends HTMLElement {
   }
   onseenchange?: (ev: CustomEvent<boolean>) => unknown;
 
-  dropDownMenuItemProvider?: (toot: Status, el: RenderedToot) => HParam;
-  contextMenuItemProvider?: (toot: Status, el: RenderedToot) => HParam;
+  set dropDownMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
+    this.#dropDownMenu.itemProvider = () => value(this.#toot, this);
+  }
+
+  set contextMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
+    this.#contextMenu.itemProvider = () => value(this.#toot, this);
+  }
 
   // Without a 0-parameter constructor we cannot create instances in HTML,
   // but only in JS.
   constructor(toot: Status) {
     super();
+    this.#toot = toot;
     const {account, poll, card} = toot;
     reRenderInto(this as HTMLElement,
       {
@@ -44,25 +51,11 @@ class RenderedToot extends HTMLElement {
         tabIndex: 0,
         onkeydown: ev => this.onkeydown?.(ev),
       },
-      H_("context-menu",
-        menuEl => {
-          const menu = menuEl as ContextMenu;
-          menu.onopen = () => reRenderInto(menu,
-            this.contextMenuItemProvider?.(toot, this),
-          );
-        }
-      ),
+      this.#contextMenu,
       H("div.toot-head",
         this.#prefixWrapper,
         this.#seenInput,
-        H_("drop-down-menu",
-          menuEl => {
-            const menu = menuEl as DropDownMenu;
-            menu.onopen = () => reRenderInto(menu,
-              this.dropDownMenuItemProvider?.(toot, this),
-            );
-          }
-        ),
+        this.#dropDownMenu,
         H("span.visibility", toot.visibility),
         toot.edited_at ? [
           H("span.toot-created.line-through", formatDate(toot.created_at)),

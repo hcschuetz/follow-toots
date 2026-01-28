@@ -1,4 +1,4 @@
-import H from "./H";
+import H, { reRenderInto, type HParam } from "./H";
 // import style from "./DropDownMenu.css" with {type: "css"};
 // ...is not yet supported by the toolchain and so we use this work-around:
 import styleRaw from "./DropDownMenu.css?raw";
@@ -9,7 +9,7 @@ export default
 class DropDownMenu extends HTMLElement {
   close: (ev: PointerEvent) => unknown;
 
-  onopen?: () => void;
+  itemProvider?: () => HParam;
 
   constructor() {
     super();
@@ -25,12 +25,14 @@ class DropDownMenu extends HTMLElement {
     shadowRoot.append(details);
     details.ontoggle = () => {
       if (details.open) {
-        this.onopen?.();
+        reRenderInto(this, this.itemProvider?.());
         details.onkeydown = ({key}) => {
           if (key === "Escape") {
             details.open = false;
           }
         }
+      } else {
+        this.replaceChildren();
       }
     }
 
