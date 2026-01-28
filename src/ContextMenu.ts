@@ -15,6 +15,7 @@ class ContextMenu extends HTMLElement {
    * implemented by Firefox.)
    */
   static disabled = false;
+  static current?: ContextMenu;
 
   open: (ev: PointerEvent) => unknown;
   close: () => unknown;
@@ -28,6 +29,8 @@ class ContextMenu extends HTMLElement {
     shadowRoot.append(menu);
 
     this.open = ev => {
+      ContextMenu.current?.close();
+      ContextMenu.current = this;
       if (ContextMenu.disabled) return;
       ev.preventDefault();
       menu.classList.add("open");
@@ -53,6 +56,7 @@ class ContextMenu extends HTMLElement {
     }
 
     this.close = () => {
+      ContextMenu.current = undefined;
       menu.classList.remove("open");
       document.removeEventListener("click", this.close);
       document.removeEventListener("contextmenu", this.close);
