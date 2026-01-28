@@ -420,7 +420,7 @@ async function renderDetails() {
   for (const toot of allToots) {
     const seenSig = seenSignals.get(versionId(toot))!;
     const tootEl = renderInto(new RenderedToot(toot), {
-      contextMenuItems: menuItems(toot),
+      contextMenuItemProvider: menuItems,
       dropDownMenuItems: menuItems(toot),
       onseenchange: ev => seenSig.value = ev.detail,
       onkeydown: tootKeyHandler(toot, seenSig),

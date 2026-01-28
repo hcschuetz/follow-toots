@@ -7,6 +7,7 @@ import formatDate from "./formatDate";
 import "./DropDownMenu";
 import "./ContextMenu";
 import { menuButtonWithKey } from "./menuButton";
+import type ContextMenu from "./ContextMenu";
 
 export default
 class RenderedToot extends HTMLElement {
@@ -21,7 +22,6 @@ class RenderedToot extends HTMLElement {
   });
   #dropDownMenu = H_("drop-down-menu");
   #toggleSeenLabel = H("span");
-  #contextMenuItemContainer = H("div.contents");
 
   set headerPrefix(hp: HParam) { reRenderInto(this.#prefixWrapper, hp); }
 
@@ -38,9 +38,7 @@ class RenderedToot extends HTMLElement {
     reRenderInto(this.#dropDownMenu, menuItems);
   }
 
-  set contextMenuItems(menuItems: HParam) {
-    reRenderInto(this.#contextMenuItemContainer, menuItems);
-  }
+  contextMenuItemProvider?: (toot: Status) => HParam;
 
   // Without a 0-parameter constructor we cannot create instances in HTML,
   // but only in JS.
@@ -54,22 +52,27 @@ class RenderedToot extends HTMLElement {
         onkeydown: ev => this.onkeydown?.(ev),
       },
       H_("context-menu",
-        menuButtonWithKey(
-          this.#toggleSeenLabel,
-          ["Space"],
-          () => {
-            this.seen = !this.seen;
-            setTimeout(() => {
-              this.scrollIntoView({
-                // "start" would move it behind the sticky header
-                block: "center",
-                behavior: "smooth",
-              });
-              this.focus();
-            }, 100);
-          },
-        ),
-        this.#contextMenuItemContainer,
+        menuEl => {
+          const menu = menuEl as ContextMenu;
+          menu.onopen = () => reRenderInto(menu,
+            menuButtonWithKey(
+              this.#toggleSeenLabel,
+              ["Space"],
+              () => {
+                this.seen = !this.seen;
+                setTimeout(() => {
+                  this.scrollIntoView({
+                    // "start" would move it behind the sticky header
+                    block: "center",
+                    behavior: "smooth",
+                  });
+                  this.focus();
+                }, 100);
+              },
+            ),
+            H("div.contents", this.contextMenuItemProvider?.(toot)),
+          );
+        }
       ),
       H("div.toot-head",
         this.#prefixWrapper,

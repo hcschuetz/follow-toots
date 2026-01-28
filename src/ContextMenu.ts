@@ -20,6 +20,8 @@ class ContextMenu extends HTMLElement {
   open: (ev: PointerEvent) => unknown;
   close: () => unknown;
 
+  onopen?: () => void;
+
   constructor() {
     super();
     const shadowRoot = this.attachShadow({mode: "open"});
@@ -32,6 +34,7 @@ class ContextMenu extends HTMLElement {
       ContextMenu.current?.close();
       ContextMenu.current = this;
       if (ContextMenu.disabled) return;
+      this.onopen?.();
       ev.preventDefault();
       menu.classList.add("open");
       asgn(menu.style, {
