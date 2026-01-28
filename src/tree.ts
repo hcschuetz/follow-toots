@@ -178,61 +178,56 @@ function previousUnseen(toot: Status) {
   ));
 }
 
-const menuItems = (toot: Status, el: RenderedToot): HParam => [
-  menuButtonWithKey(
-    overview!.seenIds.has(versionId(toot)) ? "☐ Mark toot as unseen" : "☑ Mark toot as seen",
-    ["Space"],
-    () => {
-      const sig = seenSignals.get(versionId(toot));
-      if (!sig) return;
-      sig.value = !sig.value;
-      setTimeout(() => {
-        el.scrollIntoView({
-          // "start" would move it behind the sticky header
-          block: "center",
-          behavior: "smooth",
-        });
-        el.focus();
-      }, 100);
+const menuItems = (toot: Status, el: RenderedToot): HParam => {
+  const seenSig = seenSignals.get(versionId(toot))!;
+  // No need to observe signals in an effect. (The menu is short-lived.)
+  const seen = seenSig.value;
+  const linkConfig = linkConfigSig.value;
+  return [
+    menuButtonWithKey(
+      seen ? "☐ Mark toot as unseen" : "☑ Mark toot as seen",
+      ["Space"],
+      () => {
+        seenSig.value = !seen;
+        setTimeout(() => {
+          el.scrollIntoView({
+            // "start" would move it behind the sticky header
+            block: "center",
+            behavior: "smooth",
+          });
+          el.focus();
+        }, 100);
+      },
+    ),
+    menuButtonWithKey("Previous unseen toot", ["Ctrl", "⬅"], () => previousUnseen(toot)),
+    menuButtonWithKey("Previous toot",        [        "⬅"], () => previousToot(toot)  ),
+    menuButtonWithKey("Next toot",            [        "➡"], () => nextToot(toot)      ),
+    menuButtonWithKey("Next unseen toot",     ["Ctrl", "➡"], () => nextUnseen(toot)    ),
+    function*() {
+      for (const feature of linkableFeatureKeys) {
+        const obj = linkConfig![feature];
+        for (const k in obj) if (obj[k]) {
+          const frontend = linkConfigConfig[k];
+          const href = frontend.urlFunctions[feature](instance, toot);
+          yield H("button.open-link",
+            {onclick: () => window.open(href)},
+            H("img.link-icon", {src: frontend.icon}),
+            ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
+          );
+        }
+      }
     },
-  ),
-  menuButtonWithKey("Previous unseen toot", ["Ctrl", "⬅"], () => previousUnseen(toot)),
-  menuButtonWithKey("Previous toot",        [        "⬅"], () => previousToot(toot)  ),
-  menuButtonWithKey("Next toot",            [        "➡"], () => nextToot(toot)      ),
-  menuButtonWithKey("Next unseen toot",     ["Ctrl", "➡"], () => nextUnseen(toot)    ),
-  H("div.contents",
-    el => {
-      regEffect(() => {
-        const linkConfig = linkConfigSig.value;
-        if (!linkConfig) return;
-        reRenderInto(el, function*() {
-          for (const feature of linkableFeatureKeys) {
-            const obj = linkConfig[feature];
-            for (const k in obj) if (obj[k]) {
-              const frontend = linkConfigConfig[k];
-              const href = frontend.urlFunctions[feature](instance, toot);
-              yield H("button.open-link",
-                {onclick: () => window.open(href)},
-                H("img.link-icon", {src: frontend.icon}),
-                ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
-              );
-            }
-          }
-        });
-      });
-    },
-  ),
-  // Omit this menu item if this toot is already the root?
-  H("button.follow-toot",
-    {onclick: () => {
-      const url = new URL("./tree.html", document.location.href);
-      url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
-      window.open(url);
-    }},
-    "Follow toot",
-  ),
-];
-
+    // Omit this menu item if this toot is already the root?
+    H("button.follow-toot",
+      {onclick: () => {
+        const url = new URL("./tree.html", document.location.href);
+        url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
+        window.open(url);
+      }},
+      "Follow toot",
+    ),
+  ];
+}
 
 const tootKeyHandler = (toot: Status, seenSig: Signal<boolean>) => (ev: KeyboardEvent) => {
   if (ev.shiftKey) return;

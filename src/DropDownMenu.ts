@@ -15,6 +15,11 @@ class DropDownMenu extends HTMLElement {
     super();
     const details =
       H("details.menu",
+        {
+          onkeydown: ev => { if (ev.key === "Escape") { details.open = false; }},
+          ontoggle: () =>
+            reRenderInto(this as DropDownMenu, details.open ? this.itemProvider?.() : null),
+        },
         H("summary", "☰"),
         H("div.items",
           H("slot"),
@@ -23,18 +28,6 @@ class DropDownMenu extends HTMLElement {
     const shadowRoot = this.attachShadow({mode: "open"});
     shadowRoot.adoptedStyleSheets.push(style);
     shadowRoot.append(details);
-    details.ontoggle = () => {
-      if (details.open) {
-        reRenderInto(this, this.itemProvider?.());
-        details.onkeydown = ({key}) => {
-          if (key === "Escape") {
-            details.open = false;
-          }
-        }
-      } else {
-        this.replaceChildren();
-      }
-    }
 
     this.close = ev => {
       if (!details.open) return;
