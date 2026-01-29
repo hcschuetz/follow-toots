@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Follow Toot</title>
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <script type="module" crossorigin src="./assets/tree-CKDwcY_u.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/nav-LWwRPReH.js">
+  <title>Follow Toot</title>
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <script type="module" crossorigin src="./assets/tree-aycmPg-W.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/nav-Dzs_oev3.js">
   <link rel="modulepreload" crossorigin href="./assets/signals-core.module-PplyFw7G.js">
   <link rel="modulepreload" crossorigin href="./assets/database-BGZyZyq9.js">
-  <link rel="modulepreload" crossorigin href="./assets/formatDate-BBJ6jikc.js">
+  <link rel="modulepreload" crossorigin href="./assets/formatDate-K6im5yFx.js">
   <link rel="modulepreload" crossorigin href="./assets/linkConfigConfig-YtmXU9nm.js">
-  <link rel="stylesheet" crossorigin href="./assets/nav-DTs9H1nx.css">
+  <link rel="stylesheet" crossorigin href="./assets/nav-UO5i0-Pm.css">
+  <link rel="stylesheet" crossorigin href="./assets/tree-CHNNoTbg.css">
 </head>
-<body class="tree">
+<body class="tree-page">
   <header class="tree-header">
     <nav id="nav"></nav>
 
@@ -55,25 +56,15 @@
       </div>
       <div class="tree-head-choose-mode">
         <label>
-          Mode:
-          <select id="display-mode">
-            <option value="hierarchical" selected>hierarchical</option>
-            <option value="chronological">chronological</option>
-          </select>
+          Tree:
+          <input type="checkbox" id="display-tree" checked>
         </label>
         <label>
-          Display unseen:
-          <select id="display-unseen">
-            <option value="full" selected>full</option>
-            <option value="header-only">header-only</option>
-          </select>
-        </label>
-        <label>
-          Display seen:
-          <select id="display-seen">
-            <option value="full">full</option>
-            <option value="header-only" selected>header-only</option>
-            <option value="hidden">hidden</option>
+          Collapse:
+          <select id="collapse">
+            <option value="none">none</option>
+            <option value="seen" selected>seen</option>
+            <option value="all">all</option>
           </select>
         </label>
         <label>
