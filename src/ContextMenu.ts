@@ -1,8 +1,8 @@
 import H, { reRenderInto, type HParam } from "./H";
+import asgn from "./asgn";
 // import style from "./ContextMenu.css" with {type: "css"};
 // ...is not yet supported by the toolchain and so we use this work-around:
 import styleRaw from "./ContextMenu.css?raw";
-import asgn from "./asgn";
 const style = new CSSStyleSheet();
 style.replaceSync(styleRaw);
 
