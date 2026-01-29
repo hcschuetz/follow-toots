@@ -49,7 +49,6 @@ class RenderedToot extends HTMLElement {
       {
         className: `toot visibility-${toot.visibility}`,
         tabIndex: 0,
-        onkeydown: ev => this.onkeydown?.(ev),
       },
       this.#contextMenu,
       H("div.toot-head",
