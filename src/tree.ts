@@ -333,7 +333,7 @@ function renderTootTree(): void {
     let i = 0;
     for (const {toot, children} of thread) {
       yield H("div.node",
-        "is_missing" in toot ? H("div.missing-toot", "toot(s) missing/deleted") :
+        "is_missing" in toot ? missingToot() :
         handleToot(
           toot,
           thread.length === 1 ? undefined :
@@ -356,6 +356,9 @@ function renderTootTree(): void {
   descendantsEl.classList.add("chrono");
   reRenderInto(descendantsEl, descend(tree));
 }
+
+const missingToot = () =>
+  H("div.missing-toot", "toot(s) missing/deleted/inaccessible");
 
 function renderTootList() {
   const {root, descendants} = details!;
@@ -415,7 +418,7 @@ function renderAncestors() {
         H("div.node", handleToot(toot)),
         displayTreeSig.value
         && (array.at(i+1) ?? details!.root).in_reply_to_id !== toot.id
-        ? H("div.node", H("div.missing-toot", "toot(s) missing/deleted"))
+        ? H("div.node", missingToot())
         : undefined,
       ]),
     );
