@@ -55,16 +55,18 @@ class RenderedToot extends HTMLElement {
         this.#prefixWrapper,
         this.#seenInput,
         this.#dropDownMenu,
-        H("span.visibility", toot.visibility),
-        toot.edited_at ? [
-          H("span.toot-created.line-through", formatDate(toot.created_at)),
-          H("span.toot-edited", formatDate(toot.edited_at)),
-        ] : H("span.toot-created", formatDate(toot.created_at)),
         H("img.toot-author-avatar", {
           src: account.avatar_static,
         }),
         H("span.toot-author", emojify(account.display_name, account.emojis)),
         H("span.toot-acct", "@" + account.acct),
+        H("span.fill",
+          H("span.visibility", toot.visibility),
+          toot.edited_at ? [
+            H("span.toot-created.line-through", formatDate(toot.created_at)),
+            H("span.toot-edited", formatDate(toot.edited_at)),
+          ] : H("span.toot-created", formatDate(toot.created_at)),
+        ),
       ),
       () => {
         let body: HTMLElement =

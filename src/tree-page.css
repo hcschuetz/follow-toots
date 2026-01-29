@@ -127,24 +127,39 @@ body {
     display: none;
   }
 
-  /* TODO remove .toot-list */
-
   .node {
     margin-block: var(--node-gap);
+
+    /*
+      link-height =
+        node gap (= max(top margin, bottom margin of previous toot))
+      + top border (currently 0)
+      + top padding
+      + 1/2 line height (to connect to the center of the first line)
+      + 1/2 edge width (added, not subtracted, as we have a border box)
+    */
+    > ul > li {
+      --link-height: calc(var(--node-gap) + 5px + 0.5lh + 1px);
+      &:has(> .node:first-child > .missing-toot) {
+        /* reduce the line height to 90% like the font size */
+        --link-height: calc(var(--node-gap) + 0.45lh + 1px);
+      }
+    }
   }
 
   .missing-toot {
     border-radius: 0.5em;
-    padding: 5px 1em;
+    padding: 0 1em;
     max-width: fit-content;
     background-color: #ddd;
+    font-size: 90%;
   }
 
   .toot {
     display: block;
     max-width: var(--page-width);
     border-radius: 0.5em;
-    background-color: #ddd;
+    background-color: #eee;
     &:focus {
       outline: var(--edge);
     }
@@ -167,16 +182,12 @@ body {
       align-items: center;
       gap: 0.5em;
 
-      .thread-pos {
+      .thread-pos,
+      .visibility {
         border-radius: 5px;
         padding-inline: 5px;
-        font-size: smaller;
-        background-color: #eee;
-      }
-      .visibility {
-        padding: 0 0.5em;
-        border-radius: 1lh;
-        background-color: "#cc0";
+        font-size: 90%;
+        background-color: #ddd;
       }
       img.toot-author-avatar {
         height: 1.5em;
@@ -186,12 +197,20 @@ body {
       .toot-author {
         font-weight: bold;
       }
+      .toot-acct,
+      .toot-created,
+      .toot-edited {
+        font-size: 90%;
+      }
+      .fill {
+        flex-grow: 1;
+        display: flex;
+        gap: 0.5em;
+        justify-content: flex-end;
+      }
     }
-    &.visibility-public > .toot-head > .visibility {
+    &.visibility-public > .toot-head .visibility {
       display: none;
-    }
-    > .toot-head > .visibility {
-      background-color: #ff8;
     }
     /* TODO also distinguish visibility "private" from "direct"? */
     .toot-full-body {
