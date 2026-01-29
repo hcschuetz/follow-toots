@@ -255,7 +255,14 @@ const ancestorsEl = document.querySelector<HTMLElement>("#ancestors")!;
 const descendantsEl = document.querySelector<HTMLElement>("#descendants")!;
 
 
-type Tree = {toot: Status, children: Tree[]};
+type MissingStatus = {
+  is_missing: true,
+  id: string,
+  in_reply_to_id: string,
+  account: {id: string | null | undefined},
+};
+
+type Tree = {toot: Status | MissingStatus, children: Tree[]};
 
 /** A thread with replies to the thread's toots.
  *
@@ -264,7 +271,7 @@ type Tree = {toot: Status, children: Tree[]};
  * Even toots that would not be considered parts of a thread are in a `Thread`,
  * namely one with a single element.
  */
-type Thread = {toot: Status, children: Thread[]}[];
+type Thread = {toot: Status | MissingStatus, children: Thread[]}[];
 
 function extractFirstHit<T>(a: T[], pred: (t: T) => boolean): {found?: T, rest: T[]} {
   const i = a.findIndex(pred);
@@ -293,7 +300,31 @@ function renderTootTree(): void {
     [toot.id, {toot, children: [] as Tree[]}]
   ));
   for (const toot of descendants) {
-    id2subTree.get(toot.in_reply_to_id!)?.children.push(id2subTree.get(toot.id)!);
+    const {in_reply_to_id, in_reply_to_account_id} = toot;
+    if (!in_reply_to_id) {
+      console.error("descendant without uplink:", toot);
+      continue;
+    }
+    if (!id2subTree.has(in_reply_to_id)) {
+      // `toot` references a missing (probably deleted) parent.
+      // We add a placeholder here to complete the tree structure.
+      const tree: Tree = {
+        toot: {
+          is_missing: true,
+          id: in_reply_to_id,
+          // We do not know the parent of the missing parent.
+          // (We could fetch `toot`'s ancestors and search for the last
+          // ancestor occurring in id2subTree.  But that's not worthwhile.)
+          // So we just link it to the root:
+          in_reply_to_id: root.id,
+          account: {id: in_reply_to_account_id},
+        },
+        children: [],
+      };
+      id2subTree.get(root.id)!.children.push(tree);
+      id2subTree.set(in_reply_to_id, tree);
+    }
+    id2subTree.get(in_reply_to_id)!.children.push(id2subTree.get(toot.id)!);
   }
   // ... but extracting threads is recursive:
   const tree = extractThreads(id2subTree.get(root.id)!);
@@ -302,6 +333,7 @@ function renderTootTree(): void {
     let i = 0;
     for (const {toot, children} of thread) {
       yield H("div.node",
+        "is_missing" in toot ? H("div.missing-toot", "toot(s) missing/deleted") :
         handleToot(
           toot,
           thread.length === 1 ? undefined :
@@ -377,9 +409,17 @@ function renderUnfollowed() {
 }
 
 function renderAncestors() {
-  reRenderInto(ancestorsEl,
-    details!.ancestors.map(toot => H("div.node", handleToot(toot))),
-  );
+  regEffect(() => {
+    reRenderInto(ancestorsEl,
+      details!.ancestors.map((toot, i, array) => [
+        H("div.node", handleToot(toot)),
+        displayTreeSig.value
+        && (array.at(i+1) ?? details!.root).in_reply_to_id !== toot.id
+        ? H("div.node", H("div.missing-toot", "toot(s) missing/deleted"))
+        : undefined,
+      ]),
+    );
+  });
 }
 
 async function renderDetails() {
