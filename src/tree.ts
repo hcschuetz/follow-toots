@@ -476,6 +476,8 @@ async function renderDetails() {
       dropDownMenuItemProvider: menuItems,
       onseenchange: ev => seenSig.value = ev.detail,
       onkeydown: tootKeyHandler(toot, seenSig),
+      // Not sure if this is a good idea:
+      ondblclick: () => seenSig.value = !seenSig.value,
     });
     regEffect(() => { tootEl.seen = seenSig.value; });
     tootMap.set(toot, tootEl);
