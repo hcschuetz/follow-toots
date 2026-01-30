@@ -230,7 +230,7 @@ const menuItems = (toot: Status, el: RenderedToot): HParam => {
 }
 
 const tootKeyHandler = (toot: Status, seenSig: Signal<boolean>) => (ev: KeyboardEvent) => {
-  if (ev.shiftKey) return;
+  if (ev.shiftKey || ev.altKey || ev.metaKey) return;
   switch (ev.key) {
     case "ArrowRight":
       if (ev.ctrlKey) nextUnseen(toot);
