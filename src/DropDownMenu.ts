@@ -21,9 +21,7 @@ class DropDownMenu extends HTMLElement {
             reRenderInto(this as DropDownMenu, details.open ? this.itemProvider?.() : null),
         },
         H("summary", "☰"),
-        H("div.items",
-          H("slot"),
-        ),
+        H("slot"),
       );
     const shadowRoot = this.attachShadow({mode: "open"});
     shadowRoot.adoptedStyleSheets.push(style);

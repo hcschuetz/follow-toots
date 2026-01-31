@@ -12,7 +12,7 @@
       background-color: #0003;
     }
   }
-  > .items {
+  &:open::details-content {
     position: absolute;
     top: 100%;
     z-index: 1;
