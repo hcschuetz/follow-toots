@@ -6,6 +6,7 @@ import sanitize from "./sanitize";
 import formatDate from "./formatDate";
 import ContextMenu from "./ContextMenu";
 import DropDownMenu from "./DropDownMenu";
+import renderTeX, { latexLogo } from "./renderTeX";
 
 export default
 class RenderedToot extends HTMLElement {
@@ -31,12 +32,37 @@ class RenderedToot extends HTMLElement {
   }
   onseenchange?: (ev: CustomEvent<boolean>) => unknown;
 
+  renderTeX() {
+    renderTeX(this.querySelector(".toot-content") as HTMLElement);
+  }
+
+  resetContents() {
+    const toot = this.#toot;
+    reRenderInto(this.querySelector(".toot-content") as HTMLElement,
+      sanitize(toot.content),
+      deepEmojify(toot.emojis),
+    );
+  }
+
+  #moreMenuItems = () => [
+      H("button", "Render ", latexLogo, {onclick: () => this.renderTeX()}),
+      H("button", "Reset contents", {onclick: () => this.resetContents()}),
+  ];
+
+  // TODO Unify the two menu-item lists?  Or do we expect them to diverge?
+
   set dropDownMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
-    this.#dropDownMenu.itemProvider = () => value(this.#toot, this);
+    this.#dropDownMenu.itemProvider = () => [
+      value(this.#toot, this),
+      this.#moreMenuItems(),
+    ];
   }
 
   set contextMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
-    this.#contextMenu.itemProvider = () => value(this.#toot, this);
+    this.#contextMenu.itemProvider = () => [
+      value(this.#toot, this),
+      this.#moreMenuItems(),
+    ];
   }
 
   // Without a 0-parameter constructor we cannot create instances in HTML,

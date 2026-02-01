@@ -1,0 +1,48 @@
+import H from "./H";
+
+// TODO Link integrity checks (or serve my own copy of KaTeX?)
+
+// TODO Apply CSS only to the toot content?
+// (Could be done with an iframe, @scope or shadow DOM.
+// Shadow DOM for toot content might anyway be a good idea
+// to protect against styling interference.)
+
+const baseURL = "https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/";
+
+const styleLink = H("link", {rel: "stylesheet"});
+document.head.append(styleLink);
+
+export default async function renderTeX(el: HTMLElement) {
+  try {
+    // If the style link fails, it does so silently.
+    // TODO Detect link failure and alert?
+    // But in that case there's a high probability that the import fails as well
+    // and triggers an alert.
+    styleLink.href = baseURL + "katex.min.css";
+    (await import(baseURL + "contrib/auto-render.min.mjs" as any)).default(el);
+  } catch (e) {
+    alert("LaTeX rendering failed:\n" + e);
+  }
+}
+
+// Dimensions taken from https://tess.oconnor.cx/2007/08/tex-poshlet
+export
+const latexLogo = () =>
+  H("span", {style: `
+      font-family: Times New Roman, serif;
+    `},
+    "L",
+    H("span", {style: `
+      font-size: 0.85em;
+      vertical-align: 0.15em;
+      margin-left: -0.36em;
+      margin-right: -0.15em;    
+    `}, "A"),
+    "T",
+    H("span", {style: `
+      vertical-align: -0.5ex;
+      margin-left: -0.1667em;
+      margin-right: -0.125em;    
+    `}, "E"),
+    "X",
+  );
