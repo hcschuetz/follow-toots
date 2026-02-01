@@ -16,13 +16,41 @@ export default async function renderTeX(el: HTMLElement) {
   try {
     // If the style link fails, it does so silently.
     // TODO Detect link failure and alert?
-    // But in that case there's a high probability that the import fails as well
-    // and triggers an alert.
+    // (But in that case there's a high probability that the import fails as well
+    // and triggers an alert.)
     styleLink.href = baseURL + "katex.min.css";
-    (await import(baseURL + "contrib/auto-render.min.mjs" as any)).default(el);
+    const renderMathInElement =
+      (await import(baseURL + "contrib/auto-render.min.mjs")).default;
+
+    // Toot authors may put line breaks in TeX expressions.
+    // Mastodon converts these to <br> elements and thus `renderMathInElement`
+    // will not find the TeX expression.
+    // So we convert <br>s back to newlines, apply `renderMathInElement`, and
+    // finally convert remaining newlines to <br>s again.
+    const el1 = br2newline(el);
+    renderMathInElement(el1);
+    const el2 = newline2br(el1);
+    el.replaceChildren(...el2.childNodes);
   } catch (e) {
+    console.error(e);
     alert("LaTeX rendering failed:\n" + e);
   }
+}
+
+const detectTeX = /\$\$(?:.|\n)+\$\$|\$[^$]+\$|\\\((?:.|\n)+\\\)|\\\[(?:.|\n)+\\\]/;
+
+export
+function looksLikeTeX(el: Element): boolean {
+  const descend = (e: Element) =>
+    [...e.childNodes].some(child =>
+      (child instanceof Text && detectTeX.test(child.data)) ||
+      (child instanceof Element && looksLikeTeX(child))
+    );
+  // ensure that multiline TeX expressions are detected despite mastodon's
+  // conversion of newlines to <br> elements:
+  const el1 = br2newline(el);
+  el1.normalize();
+  return descend(el1);
 }
 
 // Dimensions taken from https://tess.oconnor.cx/2007/08/tex-poshlet
@@ -46,3 +74,26 @@ const latexLogo = () =>
     `}, "E"),
     "X",
   );
+
+function br2newline(e: Element): Element {
+  const out = e.cloneNode() as Element;
+  out.append(...[...e.childNodes].map(child =>
+      child instanceof HTMLBRElement ? "\n" :
+      child instanceof Element ? br2newline(child) :
+      child instanceof Text ? child.data :
+      ""
+  ));
+  return out;
+}
+
+function newline2br(e: Element): Element {
+  const out = e.cloneNode() as Element;
+  out.append(...[...e.childNodes].flatMap<Node | string>(child =>
+    child instanceof Text
+    ? child.data.split("\n").flatMap((part, i) => i == 0 ? [part] : [H("br"), part])
+    : child instanceof Element
+    ? [newline2br(child)]
+    : []
+  ));
+  return out;
+}

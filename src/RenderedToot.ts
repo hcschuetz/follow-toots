@@ -1,12 +1,12 @@
 import A_blank from "./A_blank";
-import H, { reRenderInto, type HParam } from "./H";
+import H, { renderInto, reRenderInto, type HParam } from "./H";
 import type { Status } from "./mastodon-entities";
 import emojify, { deepEmojify } from "./emojify";
 import sanitize from "./sanitize";
 import formatDate from "./formatDate";
 import ContextMenu from "./ContextMenu";
 import DropDownMenu from "./DropDownMenu";
-import renderTeX, { latexLogo } from "./renderTeX";
+import renderTeX, { latexLogo, looksLikeTeX } from "./renderTeX";
 
 const countAbbreviations = [
   // TODO use symbols instead of letters?
@@ -52,36 +52,17 @@ class RenderedToot extends HTMLElement {
   }
   onseenchange?: (ev: CustomEvent<boolean>) => unknown;
 
-  renderTeX() {
-    renderTeX(this.querySelector(".toot-content") as HTMLElement);
-  }
-
-  resetContents() {
-    const toot = this.#toot;
-    reRenderInto(this.querySelector(".toot-content") as HTMLElement,
-      sanitize(toot.content),
-      deepEmojify(toot.emojis),
-    );
-  }
-
-  #moreMenuItems = () => [
-      H("button", "Render ", latexLogo, {onclick: () => this.renderTeX()}),
-      H("button", "Reset contents", {onclick: () => this.resetContents()}),
-  ];
-
   // TODO Unify the two menu-item lists?  Or do we expect them to diverge?
 
   set dropDownMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
     this.#dropDownMenu.itemProvider = () => [
       value(this.#toot, this),
-      this.#moreMenuItems(),
     ];
   }
 
   set contextMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
     this.#contextMenu.itemProvider = () => [
       value(this.#toot, this),
-      this.#moreMenuItems(),
     ];
   }
 
@@ -91,6 +72,7 @@ class RenderedToot extends HTMLElement {
     super();
     this.#toot = toot;
     const {account, poll, card} = toot;
+    const texWrapper = H("span.contents");
     reRenderInto(this as HTMLElement,
       {
         className: `toot visibility-${toot.visibility}`,
@@ -107,6 +89,7 @@ class RenderedToot extends HTMLElement {
         H("span.toot-author", emojify(account.display_name, account.emojis)),
         H("span.toot-acct", "@" + account.acct),
         H("span.fill",
+          texWrapper,
           H("span.visibility", toot.visibility),
           getCounts(toot),
           toot.edited_at ? [
@@ -116,8 +99,10 @@ class RenderedToot extends HTMLElement {
         ),
       ),
       () => {
+        let contentEl: HTMLElement;
         let body: HTMLElement =
         H("div.toot-body",
+          contentEl =
           H("div.toot-content", sanitize(toot.content), deepEmojify(toot.emojis)),
 
           !toot.media_attachments?.length ? undefined :
@@ -232,6 +217,34 @@ class RenderedToot extends HTMLElement {
 
           // TODO more status features (quotes, ...)
         );
+
+        if (looksLikeTeX(contentEl)) {
+          let backup: Iterable<Node> | undefined;
+          renderInto(texWrapper,
+            H("label",
+              latexLogo(),
+              H("input", input => ({
+                type: "checkbox",
+                onkeydown: ev => {
+                  if (ev.key === " ") {
+                    // toggle this checkbox but not the "seen" status
+                    ev.stopPropagation();
+                  }
+                },
+                onchange: ev => {
+                  ev.stopImmediatePropagation();
+                  ev.preventDefault();
+                  if (input.checked) {
+                    backup = contentEl.cloneNode(true).childNodes;
+                    renderTeX(contentEl);
+                  } else {
+                    reRenderInto(contentEl, backup as HParam);
+                  }
+                }
+              })),
+            ),
+          );
+        }
 
         // See the comment on `.sensitive`
         if (toot.spoiler_text) {
