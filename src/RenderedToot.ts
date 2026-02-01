@@ -8,6 +8,26 @@ import ContextMenu from "./ContextMenu";
 import DropDownMenu from "./DropDownMenu";
 import renderTeX, { latexLogo } from "./renderTeX";
 
+const countAbbreviations = [
+  // TODO use symbols instead of letters?
+  ["reblogs_count", "B"],
+  ["favourites_count", "F"],
+  ["quotes_count", "Q"],
+  ["replies_count", "R"],
+] as const;
+const countsTitle = "Number(s) of [B]oosts/[F]avourites/[Q]uotes/[R]eplies";
+
+function getCounts(toot: Status) {
+  const text =
+    countAbbreviations
+    .flatMap(([propName, abbr]) => {
+      const count = toot[propName];
+      return count ? [`${count}${abbr}`] : [];
+    })
+    .join("/");
+  return text ? H("span.toot-stats", {title: countsTitle}, `[${text}]`) : null;
+}
+
 export default
 class RenderedToot extends HTMLElement {
 
@@ -88,6 +108,7 @@ class RenderedToot extends HTMLElement {
         H("span.toot-acct", "@" + account.acct),
         H("span.fill",
           H("span.visibility", toot.visibility),
+          getCounts(toot),
           toot.edited_at ? [
             H("span.toot-created.line-through", formatDate(toot.created_at)),
             H("span.toot-edited", formatDate(toot.edited_at)),
