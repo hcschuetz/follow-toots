@@ -159,7 +159,7 @@ async function acquireToken() {
     new URLSearchParams({
       response_type: "code",
       client_id,
-      redirect_uri: document.location.href,
+      redirect_uri: document.location.origin + document.location.pathname,
       scope,
       state: instance,
       lang: "en",
@@ -179,6 +179,14 @@ async function continueAcquireRoundtrip() {
   const searchParams = new URLSearchParams(document.location.search);
   const instance = searchParams.get("state");
   const code = searchParams.get("code");
+  const error = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
+  if (error) {
+    window.history.replaceState({}, "", document.location.pathname);
+    accessTokenGridEl.scrollIntoView({behavior: "smooth", block: "center"});
+    alert(`Error: ${error}\n\n${errorDescription}`);
+    return;
+  }
   if (!(instance && code)) return;
   const credentials = window.sessionStorage.getItem("credentials:" + instance);
   if (!credentials) {
@@ -223,7 +231,7 @@ async function continueAcquireRoundtrip() {
   // is not needed since the latter will be called anyway.
   channel.postMessage(null);
 
-  window.history.replaceState({}, "", document.location.pathname.split("/").at(-1));
+  window.history.replaceState({}, "", document.location.pathname);
   accessTokenGridEl.scrollIntoView({behavior: "smooth", block: "center"});
   alert(`Saved new access token for "${instance}".`);
 }
