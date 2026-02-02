@@ -10,7 +10,7 @@ import emojify from './emojify';
 import RenderedToot from './RenderedToot';
 import formatDate from './formatDate';
 import versionId from './versionId';
-import type { Account, Status } from './mastodon-entities';
+import type { Account, Relationship, Status } from './mastodon-entities';
 import { findCircular, findLastCircular } from './findCircular';
 import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 import ContextMenu from './ContextMenu';
@@ -425,8 +425,58 @@ function renderAncestors() {
   });
 }
 
+type Stats = {n: number, account: Account, relationship?: Relationship};
+
+/** Key of a `boolean` property in `Relationship` */
+// See https://stackoverflow.com/questions/54520676/in-typescript-how-to-get-the-keys-of-an-object-type-whose-values-are-of-a-given#answer-54520829
+// and https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#mapping-modifiers
+type RelationshipFlag = {
+  [K in keyof Relationship]-?: Relationship[K] extends boolean ? K : never;
+}[keyof Relationship];
+
+const flagTexts: Record<RelationshipFlag, string> = {
+  // Notice that some flag names are from your perspective whereas others are
+  // from the perspective of the related account.
+  // The texts try to clarify that by explicitly mentioning "you".
+  following: "you follow",
+  showing_reblogs: "you get boosts",
+  notifying: "you get notified about toots",
+  followed_by: "follows you",
+  blocking: "you block",
+  blocked_by: "blocks you",
+  muting: "you mute",
+  muting_notifications: "you mute notifications",
+  requested: "you request to follow",
+  requested_by: "requests to follow you",
+  domain_blocking: "you block the domain",
+  endorsed: "you endorse/feature",
+};
+const flagTextList = Object.entries(flagTexts) as [RelationshipFlag, string][];
+
+function renderAccountStats({n, account, relationship}: Stats) {
+  const out = H("span",
+    {slot: "label"},
+    {title: `${account.display_name} @${account.acct}`},
+    H("img", {src: account.avatar_static}),
+    n > 1 ? n.toString() : null,
+  );
+  if (relationship) {
+    const flags =
+      flagTextList
+      .flatMap(([key, text]) => relationship[key] === true ? ["\n- " + text] : [])
+      .join("");
+    const note = relationship.note?.trim();
+    if (flags) out.title += flags;
+    if (note) out.title += "\n\n" + note;
+    if (flags || note) {
+      out.classList.add("indicate-relationship");
+    };
+  }
+  return out;
+}
+
 async function renderDetails() {
-  const statsMap = new Map<string, {n: number, account: Account}>();
+  const statsMap = new Map<string, Stats>();
   for (const toot of allToots) {
     const accountStats = statsMap.get(toot.account.acct);
     if (accountStats) {
@@ -436,17 +486,34 @@ async function renderDetails() {
     }
   }
   const statsList = [...statsMap.values()];
+  try {
+    // TODO Move this to actions?  And should the data go through the database?
+    const search = statsList.map(stat => `id[]=${encodeURIComponent(stat.account.id)}`).join("&");
+    const entry = await db.get("accessTokens", instance);
+    if (!entry) throw "no access token for " + instance;
+    const response = await fetch(`https://${instance}/api/v1/accounts/relationships?${search}`, {
+      headers: {
+        Authorization: `Bearer ${entry.token}`,
+      }
+    });
+    if (!response.ok) throw `HTTPS status: ${response.status} ${response.statusText}`;
+    const relationships = await response.json() as Relationship[];
+    const statsById = new Map<string, Stats>(statsList.map(stats => [stats.account.id, stats]));
+    for (const relationship of relationships) {
+      const stats = statsById.get(relationship.id);
+      if (!stats) {
+        console.warn(`Unexpected: no stats for id "${relationship.id}"`);
+        continue;
+      }
+      stats.relationship = relationship;
+    }
+  } catch (e) {
+    console.warn("When retrieving relationships:", e);
+    // otherwise ignore silently
+  }
   statsList.sort((x, y) => y.n - x.n);
   refill("#n-users", statsList.length.toString());
-  refill("#user-stats", statsList.map(({n, account}) =>
-    H("span",
-      H("img", {
-        src: account.avatar_static,
-        title: `${account.display_name} @${account.acct}`,
-      }),
-      n > 1 ? n.toString() : null,
-    )
-  ));
+  refill("#user-stats", statsList.map(renderAccountStats));
 
   registry.disposeAll();
 

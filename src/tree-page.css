@@ -69,6 +69,11 @@ body {
             height: 1.2em;
             border-radius: 20%;
           }
+          &.indicate-relationship {
+            border-radius: 3px;
+            border: 1px solid black;
+            padding-inline: 2px;
+          }
         }
       }
       .tree-head-buttons {

@@ -1,3 +1,4 @@
+import asgn from "./asgn";
 import database from "./database";
 import H, { reRenderInto } from "./H";
 
@@ -119,7 +120,7 @@ tokenInput.addEventListener("keypress", handleEnter);
 // -----------------------------------------------------
 // Acquire a token directly from the instance:
 
-const scope = "read:statuses";
+const scope = "read:statuses read:follows";
 
 async function acquireToken() {
   const instance = instanceInput.value;
