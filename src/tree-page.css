@@ -117,10 +117,8 @@ body {
   background-color: #aaa;
 
   #ancestors {
-    /* Apparently we need a little vertical padding so that the toot margins
-     * get some "resistance".
-     */
-    padding: 0.1px 1em;
+    display: flow-root;
+    padding-inline: 1em;
     background-color: #888;
   }
 
