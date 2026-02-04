@@ -9,16 +9,33 @@ import H from "./H";
 
 const baseURL = "https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/";
 
-const styleLink = H("link", {rel: "stylesheet"});
-document.head.append(styleLink);
+let texStyle: CSSStyleSheet | undefined;
+
+export
+function getTexStyle() {
+  if (!texStyle) {
+    texStyle = new CSSStyleSheet();
+    const cssURL = baseURL + "katex.min.css";
+
+    // Get and apply the actual CSS in the background:
+    (async () => {
+      try {
+        await texStyle.replace(await(await fetch(cssURL)).text());
+      } catch (e) {
+        console.error(e);
+        alert("Exception while getting/applying KaTeX stylesheet:\n" + e);
+      }
+    })();
+
+    // Hack: For whatever reason it seems to be necessary to have the style
+    // *also* at the top level, even though we have LaTeX only in shadow DOM.
+    document.head.appendChild(H("link", {rel: "stylesheet", href: cssURL}));
+  }
+  return texStyle;
+}
 
 export default async function renderTeX(el: HTMLElement) {
   try {
-    // If the style link fails, it does so silently.
-    // TODO Detect link failure and alert?
-    // (But in that case there's a high probability that the import fails as well
-    // and triggers an alert.)
-    styleLink.href = baseURL + "katex.min.css";
     const renderMathInElement =
       (await import(baseURL + "contrib/auto-render.min.mjs")).default;
 

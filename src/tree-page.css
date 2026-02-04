@@ -228,27 +228,6 @@ body {
       flex-direction: column;
       gap: 1em;
 
-      .toot-content {
-        p {
-          margin-block: 0.3em;
-          &:first-child {
-            margin-top: 0;
-          }
-          &:last-child {
-            margin-bottom: 0;
-          }
-        }
-        /* TODO make these hacks configurable?: */
-        span.ellipsis::after {
-          content: "...";
-        }
-        span.invisible {
-          display: inline-block;
-          width: 0;
-          text-wrap-mode: nowrap;
-          overflow-x: hidden;
-        }
-      }
       details.sensitive {
         summary::after {
           content: "Show sensitive media";

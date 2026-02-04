@@ -6,7 +6,8 @@ import sanitize from "./sanitize";
 import formatDate from "./formatDate";
 import ContextMenu from "./ContextMenu";
 import DropDownMenu from "./DropDownMenu";
-import renderTeX, { latexLogo, looksLikeTeX } from "./renderTeX";
+import renderTeX, { getTexStyle, latexLogo, looksLikeTeX } from "./renderTeX";
+import tootContentCSS from "./toot-content.css?raw";
 
 const countAbbreviations = [
   // TODO use symbols instead of letters?
@@ -27,6 +28,9 @@ function getCounts(toot: Status) {
     .join("/");
   return text ? H("span.toot-stats", {title: countsTitle}, `[${text}]`) : null;
 }
+
+const tootContentStyle = new CSSStyleSheet();
+tootContentStyle.replace(tootContentCSS);
 
 export default
 class RenderedToot extends HTMLElement {
@@ -99,12 +103,18 @@ class RenderedToot extends HTMLElement {
         ),
       ),
       () => {
-        let contentEl: HTMLElement;
+        const contentEl = H("div.toot-content",
+          sanitize(toot.content),
+          deepEmojify(toot.emojis),
+        );
+        const hostEl = H("div.toot-content-host");
+        const shadowRoot = hostEl.attachShadow({mode: "open"});
+        shadowRoot.adoptedStyleSheets.push(tootContentStyle);
+        shadowRoot.getRootNode().appendChild(contentEl);
+
         let body: HTMLElement =
         H("div.toot-body",
-          contentEl =
-          H("div.toot-content", sanitize(toot.content), deepEmojify(toot.emojis)),
-
+          hostEl,
           !toot.media_attachments?.length ? undefined :
           () => {
             const attachments =
@@ -218,8 +228,8 @@ class RenderedToot extends HTMLElement {
           // TODO more status features (quotes, ...)
         );
 
-        if (looksLikeTeX(contentEl)) {
-          let backup: Iterable<Node> | undefined;
+        if (looksLikeTeX(contentEl!)) {
+          let backup: Node | undefined;
           renderInto(texWrapper,
             H("label",
               latexLogo(),
@@ -235,10 +245,19 @@ class RenderedToot extends HTMLElement {
                   ev.stopImmediatePropagation();
                   ev.preventDefault();
                   if (input.checked) {
-                    backup = contentEl.cloneNode(true).childNodes;
+                    backup = contentEl.cloneNode(true);
                     renderTeX(contentEl);
+                    const {adoptedStyleSheets} = hostEl.shadowRoot!;
+                    const texStyle = getTexStyle();
+                    // We do not remove texStyle when LaTeX rendering is
+                    // switched off (because I don't know how and because it's
+                    // anyway more efficient to keep it.)
+                    // Therefore we better avoid duplicates here:
+                    if (!adoptedStyleSheets.includes(texStyle)) {
+                      adoptedStyleSheets.push(texStyle);
+                    }
                   } else {
-                    reRenderInto(contentEl, backup as HParam);
+                    reRenderInto(contentEl, backup!.childNodes as HParam);
                   }
                 }
               })),
@@ -259,4 +278,3 @@ class RenderedToot extends HTMLElement {
 }
 
 window.customElements.define("rendered-toot", RenderedToot);
-
