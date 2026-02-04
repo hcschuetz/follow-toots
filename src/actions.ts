@@ -2,7 +2,6 @@ import asgn from "./asgn";
 import database, { type OverviewEntry } from "./database";
 import type { Context, Status } from "./mastodon-entities";
 import type { Notifications } from "./Notifications";
-import sanitize from "./sanitize";
 import setupNotifications from "./setupNotifications";
 import versionId from "./versionId";
 
@@ -116,10 +115,11 @@ async function fetchTree(instance: string, id: string) {
   }
 }
 
+const parser = new DOMParser();
+
 function html2text(html: string) {
-  const auxEl = new Document().createElement("div");
-  auxEl.append(...sanitize(html));
-  return auxEl.textContent;
+  // no need to sanitize as we only use the text content
+  return parser.parseFromString(html, "text/html").body.textContent;
 }
 
 const count = <T>(values: T[], pred: (item: T) => boolean) =>
