@@ -119,14 +119,6 @@ new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 readLinkConfig();
 
 
-const contextMenuEl = document.querySelector<HTMLInputElement>("#context-menu")!;
-{
-  function propagate() { ContextMenu.disabled = !contextMenuEl.checked; }
-  contextMenuEl.onchange = propagate;
-  propagate();
-}
-
-
 const tootMap = new Map<Status, RenderedToot>();
 /** ordered according to the current display mode */
 const toots = new Array<Status>();

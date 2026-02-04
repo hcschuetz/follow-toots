@@ -8,13 +8,6 @@ style.replaceSync(styleRaw);
 
 export default
 class ContextMenu extends HTMLElement {
-  /** static so that we can disable/enable all instances at once.
-   * 
-   * (I'd prefer to propagate the flag to individual instances via CSS and to
-   * extract it here with `this.computedStyleMap` but the latter is not
-   * implemented by Firefox.)
-   */
-  static disabled = false;
   static current?: ContextMenu;
 
   open: (ev: PointerEvent) => unknown;
@@ -31,9 +24,9 @@ class ContextMenu extends HTMLElement {
     shadowRoot.append(menu);
 
     this.open = ev => {
+      if (!ev.ctrlKey) return;
       ContextMenu.current?.close();
       ContextMenu.current = this;
-      if (ContextMenu.disabled) return;
       reRenderInto(this, this.itemProvider?.());
       ev.preventDefault();
       menu.classList.add("open");
