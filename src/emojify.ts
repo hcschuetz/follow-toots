@@ -61,6 +61,10 @@ export default function* emojify(text: string, emojis: CustomEmoji[] = []) {
   yield text.substring(emittedUntil);
 }
 
+/**
+ * Expand emojis in all text nodes in `el` by side effect.
+ * Notice that this is a curried function.
+ */
 export
 function deepEmojify(emojis: CustomEmoji[]): (el: HTMLElement) => void {
   function descend(el: HTMLElement) {
