@@ -76,13 +76,7 @@ body {
           }
         }
       }
-      .tree-head-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.5em;
-      }
-      .tree-head-choose-mode {
+      .toolbar {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5em 1em;

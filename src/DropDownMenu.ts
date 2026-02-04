@@ -18,6 +18,7 @@ class DropDownMenu extends HTMLElement {
         {
           onkeydown: ev => { if (ev.key === "Escape") { details.open = false; }},
           ontoggle: () =>
+            this.itemProvider &&
             reRenderInto(this as DropDownMenu, details.open ? this.itemProvider?.() : null),
         },
         H("summary", "☰"),

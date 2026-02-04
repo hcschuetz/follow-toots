@@ -42,13 +42,13 @@
         <span><output id="n-users"></output> users</span>
       </div>
       <div id="user-stats"></div>
-      <div class="tree-head-buttons">
-        <button id="all-seen">☑ All seen</button>
-        <button id="all-unseen">☐ All unseen</button>
-        <button id="reload">⟳ Reload</button>
-        <button id="remove">✗ Remove</button>
-      </div>
-      <div class="tree-head-choose-mode">
+      <div class="toolbar">
+        <drop-down-menu class="tree-head-actions">
+          <button id="all-seen">☑ All seen</button>
+          <button id="all-unseen">☐ All unseen</button>
+          <button id="reload">⟳ Reload</button>
+          <button id="remove">✗ Remove</button>
+        </drop-down-menu>
         <label>
           Tree:
           <input type="checkbox" id="display-tree" checked>
