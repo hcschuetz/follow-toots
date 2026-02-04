@@ -60,6 +60,8 @@ const elementPermissions: ElementPermissions = new Map(Object.entries({
   UL: kept(),
   OL: kept(),
   LI: kept(),
+  CODE: kept(),
+  PRE: kept(),
 }));
 
 // -----------------------------------------------------------------------------
@@ -94,7 +96,10 @@ function* sanitizeNodes(nodes: NodeListOf<ChildNode>)
       const permissions = elementPermissions.get(node.tagName);
       switch (permissions?.keep) {
         case undefined:
-          console.warn("skipping element", node);
+          console.warn("unknown element", node);
+          // just drop the element but not its contents
+          // (as browsers do upon an unknown element)
+          yield* sanitizeNodes(node.childNodes);
           break;
         case true: {
           yield H_(node.tagName,
