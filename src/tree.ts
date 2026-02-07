@@ -13,7 +13,6 @@ import versionId from './versionId';
 import type { Account, Relationship, Status } from './mastodon-entities';
 import { findCircular, findLastCircular } from './findCircular';
 import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
-import ContextMenu from './ContextMenu';
 import Registry from './Registry';
 import { menuButtonWithKey } from './menuButton';
 
