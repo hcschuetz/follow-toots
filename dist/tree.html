@@ -4,14 +4,14 @@
   <meta charset="utf-8" />
   <title>Follow Toot</title>
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <script type="module" crossorigin src="./assets/tree-BKPkuJdI.js"></script>
+  <script type="module" crossorigin src="./assets/tree-wxExhySV.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/nav-Dzs_oev3.js">
   <link rel="modulepreload" crossorigin href="./assets/signals-core.module-PplyFw7G.js">
   <link rel="modulepreload" crossorigin href="./assets/database-BGZyZyq9.js">
-  <link rel="modulepreload" crossorigin href="./assets/formatDate-K6im5yFx.js">
+  <link rel="modulepreload" crossorigin href="./assets/formatDate-Dyo-rJ98.js">
   <link rel="modulepreload" crossorigin href="./assets/linkConfigConfig-YtmXU9nm.js">
   <link rel="stylesheet" crossorigin href="./assets/nav-UO5i0-Pm.css">
-  <link rel="stylesheet" crossorigin href="./assets/tree-gjmdHPxE.css">
+  <link rel="stylesheet" crossorigin href="./assets/tree-5sXmq5vb.css">
 </head>
 <body class="tree-page">
   <header class="tree-header">
@@ -48,13 +48,13 @@
         <span><output id="n-users"></output> users</span>
       </div>
       <div id="user-stats"></div>
-      <div class="tree-head-buttons">
-        <button id="all-seen">☑ All seen</button>
-        <button id="all-unseen">☐ All unseen</button>
-        <button id="reload">⟳ Reload</button>
-        <button id="remove">✗ Remove</button>
-      </div>
-      <div class="tree-head-choose-mode">
+      <div class="toolbar">
+        <drop-down-menu class="tree-head-actions">
+          <button id="all-seen">☑ All seen</button>
+          <button id="all-unseen">☐ All unseen</button>
+          <button id="reload">⟳ Reload</button>
+          <button id="remove">✗ Remove</button>
+        </drop-down-menu>
         <label>
           Tree:
           <input type="checkbox" id="display-tree" checked>
@@ -66,10 +66,6 @@
             <option value="seen" selected>seen</option>
             <option value="all">all</option>
           </select>
-        </label>
-        <label>
-          Custom context menu:
-          <input type="checkbox" id="context-menu" checked>
         </label>
       </div>
     </div>
