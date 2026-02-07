@@ -9,24 +9,27 @@ import DropDownMenu from "./DropDownMenu";
 import renderTeX, { getTexStyle, latexLogo, looksLikeTeX } from "./renderTeX";
 import tootContentCSS from "./toot-content.css?raw";
 
-const countAbbreviations = [
-  // TODO use symbols instead of letters?
-  ["reblogs_count", "B"],
-  ["favourites_count", "F"],
-  ["quotes_count", "Q"],
-  ["replies_count", "R"],
-] as const;
-const countsTitle = "Number(s) of [B]oosts/[F]avourites/[Q]uotes/[R]eplies";
+const countProps = ([
+  ["reblogs_count",    "B", "boost",     "boosts"],
+  ["favourites_count", "F", "favourite", "favourites"],
+  ["quotes_count",     "Q", "quote",     "quotes"],
+  ["replies_count",    "R", "reply",     "replies"],
+] as const)
+.map(([prop, abbr, singular, plural]) => ({prop, abbr, singular, plural}));
 
 function getCounts(toot: Status) {
+  if (countProps.every(({prop}) => toot[prop] === 0)) return null;
   const text =
-    countAbbreviations
-    .flatMap(([propName, abbr]) => {
-      const count = toot[propName];
-      return count ? [`${count}${abbr}`] : [];
-    })
+    countProps
+    .filter(({prop}) => toot[prop] !== 0)
+    .map(({prop, abbr}) => `${toot[prop]}${abbr}`)
     .join("/");
-  return text ? H("span.toot-stats", {title: countsTitle}, `[${text}]`) : null;
+  const title =
+    countProps.map(({prop, singular, plural}) => {
+      const count = toot[prop];
+      return `${count} ${count === 1 ? singular : plural}`;
+    }).join(", ");
+  return H("span.toot-stats", {title}, `[${text}]`);
 }
 
 const tootContentStyle = new CSSStyleSheet();
