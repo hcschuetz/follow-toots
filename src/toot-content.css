@@ -1,3 +1,7 @@
+.toot-content {
+  white-space: pre-wrap;
+}
+
 p {
   margin-block: 0.3em;
   &:first-child {
