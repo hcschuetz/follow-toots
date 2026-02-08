@@ -59,7 +59,11 @@ import"./nav-Dzs_oev3.js";import{t as e}from"./database-BGZyZyq9.js";import{a as
       margin-right: -0.125em;    
     `},`E`),`X`);function T(e){let t=e.cloneNode();return t.append(...[...e.childNodes].map(e=>e instanceof HTMLBRElement?`
 `:e instanceof Element?T(e):e instanceof Text?e.data:``)),t}function be(e){let t=e.cloneNode();return t.append(...[...e.childNodes].flatMap(e=>e instanceof Text?e.data.split(`
-`).flatMap((e,t)=>t==0?[e]:[h(`br`),e]):e instanceof Element?[be(e)]:[])),t}var xe=`p {\r
+`).flatMap((e,t)=>t==0?[e]:[h(`br`),e]):e instanceof Element?[be(e)]:[])),t}var xe=`.toot-content {\r
+  white-space: pre-wrap;\r
+}\r
+\r
+p {\r
   margin-block: 0.3em;\r
   &:first-child {\r
     margin-top: 0;\r
