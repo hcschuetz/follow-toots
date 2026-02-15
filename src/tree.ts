@@ -208,15 +208,14 @@ const menuItems = (toot: Status, el: RenderedToot): HParam => {
         }
       }
     },
-    // Omit this menu item if this toot is already the root?
-    H("button.follow-toot",
-      {onclick: () => {
-        const url = new URL("./tree.html", document.location.href);
-        url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
-        window.open(url);
-      }},
-      "Follow toot",
-    ),
+    () => {
+      const url = new URL(document.location.href);
+      url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
+      return H("a.follow-toot",
+        {href: url.toString(), target: "_blank", rel: "noopener noreferrer"},
+        "Follow toot",
+      );
+    },
   ];
 }
 

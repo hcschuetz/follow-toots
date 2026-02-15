@@ -126,6 +126,7 @@ p {
   margin-block: 4px;
 }
 
+a.follow-toot,
 button {
   margin: 0;
   border: none;
