@@ -465,6 +465,35 @@ function renderAccountStats({n, account, relationship}: Stats) {
   return out;
 }
 
+const dialog = document.querySelector<HTMLDialogElement>("#account-list-dialog")!;
+const dialogH = document.querySelector<HTMLDialogElement>("#account-list-heading")!;
+const dialogG = document.querySelector<HTMLDialogElement>("#account-list-grid")!;
+const dialogClose = document.querySelector<HTMLButtonElement>("#account-list-close")!;
+
+dialogClose.onclick = () => dialog.close();
+
+async function getJSON(url: string) {
+  const entry = await db.get("accessTokens", instance);
+  if (!entry) throw "no access token for " + instance;
+  const response = await fetch(url, {headers: {Authorization: `Bearer ${entry.token}`}});
+  if (!response.ok) throw `HTTPS status: ${response.status} ${response.statusText}`;
+  return await response.json();
+}
+
+const showAccounts = (heading: string, urlSuffix: string) => async (toot: Status) => {
+  const accounts: Account[] =
+    await getJSON(`https://${instance}/api/v1/statuses/${toot.id}/${urlSuffix}`);
+  dialogH.replaceChildren(heading);
+  dialogG.replaceChildren(...accounts.flatMap(account => [
+    H("img", {src: account.avatar}),
+    H("span.reaction-author", emojify(account.display_name || account.acct, account.emojis)),
+    H("span.reaction-acct", "@" + account.acct),
+    // TODO number of followers, external links
+  ])
+  )
+  dialog.showModal();
+};
+
 async function renderDetails() {
   const statsMap = new Map<string, Stats>();
   for (const toot of allToots) {
@@ -538,6 +567,8 @@ async function renderDetails() {
       onkeydown: tootKeyHandler(toot, seenSig),
       // Not sure if this is a good idea:
       ondblclick: () => seenSig.value = !seenSig.value,
+      onshowboosts: showAccounts("Boosted By", "reblogged_by"),
+      onshowfavs: showAccounts("Favorited By", "favourited_by"),
     });
     regEffect(() => { tootEl.seen = seenSig.value; });
     tootMap.set(toot, tootEl);

@@ -10,27 +10,12 @@ import renderTeX, { getTexStyle, latexLogo, looksLikeTeX } from "./renderTeX";
 import tootContentCSS from "./toot-content.css?raw";
 
 const countProps = ([
-  ["reblogs_count",    "B", "boost",     "boosts"],
-  ["favourites_count", "F", "favourite", "favourites"],
+  ["reblogs_count",    "B", "boost",     "boosts", "onshowboosts"],
+  ["favourites_count", "F", "favourite", "favourites", "onshowfavs"],
   ["quotes_count",     "Q", "quote",     "quotes"],
   ["replies_count",    "R", "reply",     "replies"],
 ] as const)
-.map(([prop, abbr, singular, plural]) => ({prop, abbr, singular, plural}));
-
-function getCounts(toot: Status) {
-  if (countProps.every(({prop}) => toot[prop] === 0)) return null;
-  const text =
-    countProps
-    .filter(({prop}) => toot[prop] !== 0)
-    .map(({prop, abbr}) => `${toot[prop]}${abbr}`)
-    .join("/");
-  const title =
-    countProps.map(({prop, singular, plural}) => {
-      const count = toot[prop];
-      return `${count} ${count === 1 ? singular : plural}`;
-    }).join(", ");
-  return H("span.toot-stats", {title}, `[${text}]`);
-}
+.map(([prop, abbr, singular, plural, method]) => ({prop, abbr, singular, plural, method}));
 
 const tootContentStyle = new CSSStyleSheet();
 tootContentStyle.replace(tootContentCSS);
@@ -59,6 +44,9 @@ class RenderedToot extends HTMLElement {
   }
   onseenchange?: (ev: CustomEvent<boolean>) => unknown;
 
+  onshowboosts?: (toot: Status) => unknown;
+  onshowfavs?: (toot: Status) => unknown;
+
   // TODO Unify the two menu-item lists?  Or do we expect them to diverge?
 
   set dropDownMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
@@ -80,6 +68,23 @@ class RenderedToot extends HTMLElement {
     this.#toot = toot;
     const {account, poll, card} = toot;
     const texWrapper = H("span.contents");
+    const stats =
+      (countProps.every(({prop}) => toot[prop] === 0)) ? null :
+      H("span.toot-stats",
+        {title: countProps.map(({prop, singular, plural}) => {
+          const count = toot[prop];
+          return `${count} ${count === 1 ? singular : plural}`;
+        }).join(", ")},
+        countProps
+        .filter(({prop}) => toot[prop] !== 0)
+        .flatMap(({prop, abbr, method}, i) => [
+          ...i === 0 ? [] : ["/"],
+          H("span",
+            {onclick: () => method && this[method]?.(toot)},
+            `${toot[prop]}${abbr}`,
+          ),
+        ]),
+      );
     reRenderInto(this as HTMLElement,
       {
         className: `toot visibility-${toot.visibility}`,
@@ -97,8 +102,8 @@ class RenderedToot extends HTMLElement {
         H("span.toot-acct", "@" + account.acct),
         H("span.fill",
           texWrapper,
+          stats,
           H("span.visibility", toot.visibility),
-          getCounts(toot),
           toot.edited_at ? [
             H("span.toot-created.line-through", formatDate(toot.created_at)),
             H("span.toot-edited", formatDate(toot.edited_at)),

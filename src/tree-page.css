@@ -302,3 +302,37 @@ body {
     }
   }
 }
+
+#account-list-dialog {
+  border: none;
+  outline: none;
+
+  #account-list-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: transparent;
+    color: black;
+    font-size: 150%;
+  }
+  #account-list-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 0.5em;
+
+    &:empty::after {
+      content: "(no entries)";
+    }
+
+    img {
+      width: 1.2em;
+    }
+    .reaction-author {
+      font-weight: bold;
+    }
+    .reaction-acct {
+      font-size: 90%;
+    }
+  }
+}

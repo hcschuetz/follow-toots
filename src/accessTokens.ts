@@ -119,7 +119,7 @@ tokenInput.addEventListener("keypress", handleEnter);
 // -----------------------------------------------------
 // Acquire a token directly from the instance:
 
-const scope = "read:statuses read:follows";
+const scope = "read:statuses read:follows read:accounts";
 
 async function acquireToken() {
   const instance = instanceInput.value;
