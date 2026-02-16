@@ -508,15 +508,7 @@ async function renderDetails() {
   try {
     // TODO Move this to actions?  And should the data go through the database?
     const search = statsList.map(stat => `id[]=${encodeURIComponent(stat.account.id)}`).join("&");
-    const entry = await db.get("accessTokens", instance);
-    if (!entry) throw "no access token for " + instance;
-    const response = await fetch(`https://${instance}/api/v1/accounts/relationships?${search}`, {
-      headers: {
-        Authorization: `Bearer ${entry.token}`,
-      }
-    });
-    if (!response.ok) throw `HTTPS status: ${response.status} ${response.statusText}`;
-    const relationships = await response.json() as Relationship[];
+    const relationships: Relationship[] = await getJSON(`https://${instance}/api/v1/accounts/relationships?${search}`);
     const statsById = new Map<string, Stats>(statsList.map(stats => [stats.account.id, stats]));
     for (const relationship of relationships) {
       const stats = statsById.get(relationship.id);
