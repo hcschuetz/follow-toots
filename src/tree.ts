@@ -201,8 +201,7 @@ const menuItems = (toot: Status, el: RenderedToot): HParam => {
         for (const k in obj) if (obj[k]) {
           const frontend = linkConfigConfig[k];
           const href = frontend.urlFunctions[feature](instance, toot);
-          yield H("button.open-link",
-            {onclick: () => window.open(href)},
+          yield A_blank("button open-link", href,
             H("img.link-icon", {src: frontend.icon}),
             ` Open ${linkableFeatures[feature].toLowerCase()} on ${frontend.name(instance)}`,
           );
@@ -210,12 +209,15 @@ const menuItems = (toot: Status, el: RenderedToot): HParam => {
       }
     },
     () => {
+      const {root} = details!;
       const url = new URL(document.location.href);
-      url.hash = new URLSearchParams({url: `https://${instance}/@${toot.account.acct}/${toot.id}`}).toString();
-      return H("a.follow-toot",
-        {href: url.toString(), target: "_blank", rel: "noopener noreferrer"},
-        "Follow toot",
-      );
+      url.hash = new URLSearchParams({
+        url: `https://${instance}/@${root.account.acct}/${root.id}`,
+        focus: toot.id
+      }).toString();
+      return H("button.link-here", "Copy link", {
+        onclick: () => window.navigator.clipboard.writeText(url.toString()),
+      });
     },
   ];
 }
