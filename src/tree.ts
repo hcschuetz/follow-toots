@@ -195,8 +195,9 @@ const menuItems = (toot: Status, el: RenderedToot): HParam => {
     menuButtonWithKey("Next toot",            [        "➡"], () => nextToot(toot)      ),
     menuButtonWithKey("Next unseen toot",     ["Ctrl", "➡"], () => nextUnseen(toot)    ),
     function*() {
+      if (!linkConfig) return;
       for (const feature of linkableFeatureKeys) {
-        const obj = linkConfig![feature];
+        const obj = linkConfig[feature];
         for (const k in obj) if (obj[k]) {
           const frontend = linkConfigConfig[k];
           const href = frontend.urlFunctions[feature](instance, toot);
