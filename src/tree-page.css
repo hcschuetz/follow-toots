@@ -334,10 +334,10 @@ dialog {
 
   .close-dialog {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 0.25em;
+    right: 0.25em;
     background-color: transparent;
     color: black;
-    font-size: 120%;
+    font-size: 150%;
   }
 }
