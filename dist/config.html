@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <title>Follow Toots - Configuration</title>
-  <script type="module" crossorigin src="./assets/config-J-WEnZhN.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/nav-Dd23zYRy.js">
+  <script type="module" crossorigin src="./assets/config-DhOsO8VH.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/nav-CZS_fpMP.js">
   <link rel="modulepreload" crossorigin href="./assets/signals-core.module-PplyFw7G.js">
   <link rel="modulepreload" crossorigin href="./assets/database-BGZyZyq9.js">
   <link rel="modulepreload" crossorigin href="./assets/linkConfigConfig-YtmXU9nm.js">
-  <link rel="stylesheet" crossorigin href="./assets/nav-CVynlGnj.css">
+  <link rel="stylesheet" crossorigin href="./assets/nav-BrzJz4rO.css">
 </head>
 <body>
   <nav id="nav"></nav>
@@ -59,8 +59,8 @@
     following the replies to that toot.
     Note that you have to be on a page for a particular toot
     (not on your home feed, some profile page, or ...).
-    If you are on a non-toot page, the opened toot-following page will fail
-    in some way.
+    If you are not on a page for a specific toot,
+    the opened toot-following page will display an error message.
   </p>
   <p>
     You can use the bookmarklet from
@@ -88,7 +88,7 @@
 
   <div id="config-links"></div>
 
-  <h2>Access Tokens</h2>
+  <h2>Authentication Using Access Tokens</h2>
 
   <p>
     First of all: You <strong>can</strong> use this application
@@ -99,10 +99,16 @@
     <li>If you want to see toots with restricted visibility.</li>
     <li>
       If you want to follow a toot with more than 60 descendants.
-      (Mastodon reports at most 60 descendants to unauthenticated users.)
+      (Mastodon reports at most 60 descendants to unauthenticated users.
+      There is also a limit for the number of reported ancestors,
+      but that is rarely hit.)
     </li>
     <li>
       If you have participated in polls and want to see your own votes.
+    </li>
+    <li>
+      If you want to see your relationships (following, muting, ...)
+      to other users participating in a conversation.
     </li>
   </ul>
   <p>
@@ -159,7 +165,11 @@
         (<code>urn:ietf:wg:oauth:2.0:oob</code>)
       </li>
       <li>
-        Check "read:statuses" and uncheck all other scopes.
+        Check
+        <code>read:statuses</code>,
+        <code>read:follows</code>, and
+        <code>read:accounts</code>.
+        Uncheck all other scopes.
         ("Status" is the technical term for "toot".)
       </li>
       <li>

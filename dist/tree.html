@@ -4,14 +4,14 @@
   <meta charset="utf-8" />
   <title>Follow Toot</title>
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <script type="module" crossorigin src="./assets/tree-f_yQGSPK.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/nav-Dd23zYRy.js">
+  <script type="module" crossorigin src="./assets/tree-Cn4BYsk0.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/nav-CZS_fpMP.js">
   <link rel="modulepreload" crossorigin href="./assets/signals-core.module-PplyFw7G.js">
   <link rel="modulepreload" crossorigin href="./assets/database-BGZyZyq9.js">
   <link rel="modulepreload" crossorigin href="./assets/formatDate-Dyo-rJ98.js">
   <link rel="modulepreload" crossorigin href="./assets/linkConfigConfig-YtmXU9nm.js">
-  <link rel="stylesheet" crossorigin href="./assets/nav-CVynlGnj.css">
-  <link rel="stylesheet" crossorigin href="./assets/tree-DNLdHCA2.css">
+  <link rel="stylesheet" crossorigin href="./assets/nav-BrzJz4rO.css">
+  <link rel="stylesheet" crossorigin href="./assets/tree-VcFbuD4D.css">
 </head>
 <body class="tree-page">
   <header class="tree-header">
@@ -49,12 +49,7 @@
       </div>
       <div id="user-stats"></div>
       <div class="toolbar">
-        <drop-down-menu class="tree-head-actions">
-          <button id="all-seen">☑ All seen</button>
-          <button id="all-unseen">☐ All unseen</button>
-          <button id="reload">⟳ Reload</button>
-          <button id="remove">✗ Remove</button>
-        </drop-down-menu>
+        <button onclick="document.querySelector('#tree-help-dialog').showModal();">Help</button>
         <label>
           Tree:
           <input type="checkbox" id="display-tree" checked>
@@ -67,6 +62,12 @@
             <option value="all">all</option>
           </select>
         </label>
+        <drop-down-menu class="tree-head-actions">
+          <button id="all-seen">☑ All seen</button>
+          <button id="all-unseen">☐ All unseen</button>
+          <button id="reload">⟳ Reload</button>
+          <button id="unfollow">✗ Unfollow</button>
+        </drop-down-menu>
       </div>
     </div>
   </header>
@@ -77,9 +78,150 @@
   </main>
 
   <dialog id="account-list-dialog">
-    <button id="account-list-close">×</button>
+    <button class="close-dialog">🗙</button>
     <h3 id="account-list-heading"></h3>
     <div id="account-list-grid"></div>
+  </dialog>
+
+  <dialog id="tree-help-dialog"><!-- Or should this go to a separate page? -->
+    <button class="close-dialog">🗙</button>
+    <h2>Help for the "Tree" Page</h2>
+    <em>
+      (For general information about this Web app see the
+      <a href="about.html" target="_blank" rel="noopener noreferrer">"About" page)</a>.
+    </em>
+
+    <h3>Primary Functionality</h3>
+
+    <p>
+      If you "follow" a toot, this page displays
+    </p>
+    <ul>
+      <li>
+        the toots to which the followed toot is a
+        (direct or indirect) reply (if any),
+      </li>
+      <li>the followed toot itself, and</li>
+      <li>the (direct and indirect) replies to the followed toot.</li>
+    </ul>
+    <p>
+      The <b>Tree</b> checkbox allows you to switch between
+      a hierarchical and a (purely chronological) flat layout of the replies.
+    </p>
+    <p>
+      Each toot has a <b>checkbox</b>, which you can use to tell the app that you have
+      <b>seen</b> the toot.
+      By default the contents of seen toots will be hidden ("collapsed").
+      But you can change that behavior with the <b>Collapse</b> menu,
+      selecting whether no toots/only seen toots/all toots should be collapsed.
+    </p>
+
+    <h3>More on the Page Header</h3>
+    <p>
+      The header contains the following lines
+      (below a list of links to other pages and the page title):
+    </p>
+    <ul>
+      <li>
+        Information about the <b>author</b> of the followed toot
+        and the mastodon <b>instance</b> from where the toots are fetched.
+      </li>
+      <li>
+        Some <b>dates</b>:
+        the date of the oldest and the newest toot on the page,
+        as well as the last time you fetched the toot data.
+        (Note that there is, at least for now, no automatic downloading of
+        new or edited toots.)
+      </li>
+      <li>
+        Some <b>statistics</b> about toots and users (discussion participants).
+        Hover over a user icon to see the name.
+        If you are authenticated
+        (see the <a href="config.html" target="_blank" rel="noopener noreferrer">
+        configuration page</a>),
+        users with whom you have some relationship
+        (following in either direction, muting, ...)
+        will be highlighted.
+      </li>
+      <li>
+        The last line contains the following items (partly in a ☰ menu):
+        <ul>
+          <li>
+            The <b>Help</b> button to open this info box.
+          </li>
+          <li>
+            The <b>Tree</b> checkbox and the <b>Collapse</b> menu as described above.
+          </li>
+          <li>
+            Buttons for <b>marking all toots</b> on the page as seen or unseen,
+            respectively.
+          </li>
+          <li>
+            A button for <b>reloading</b> the toots for this page so that you get
+            new and edited toots.
+            It is often a good idea to mark all toots as seen before reloading.
+            This way you quickly recognize any new toots you have not yet seen.
+          </li>
+          <li>
+            A button for <b>unfollowing</b> the followed toot of this page.
+            This will also delete information about seen toots on this page.
+            (Note that this web app lets your browser store followed toots
+            and the set of seen toots on the respective pages.
+            So this information survives closing and re-opening the page
+            or even a brower restart.  It will be removed when you unfollow
+            the toot.)
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>More on Toots</h3>
+
+    <p>
+      Each toot is displayed as a <b>header</b> with some metadata and
+      a <b>body</b> with the toot's content.  The latter may be hidden
+      ("collapsed") as described above.
+    </p>
+    <p>
+      The ☰ <b>menu</b> of a toot can also be opened by right-clicking
+      anywhere on the toot with the Control key held down.
+    </p>
+    <ul>
+      <li>
+        The first few items (for toggling the "seen" status of the toot
+        and for navigating across the toots on the page) also display the
+        keyboard keys to invoke the actions.
+        <br>
+        You can also toggle the "seen" state by double-clicking a toot.
+      </li>
+      <li>
+        If you have checked some boxes in the
+        <a href="config.html" target="_blank" rel="noopener noreferrer">
+        configuration page</a>, there will be links to the toot or the
+        account in some mastodon clients.
+      </li>
+      <li>
+        A button to <b>copy a link</b> to this toot within this page.
+      </li>
+    </ul>
+    <p>
+      The toot header also provides counts of boosts (B), favorings (F),
+      quotes (Q) and replies (R).  Boosts and favorings can be clicked to
+      get more information.
+    </p>
+    <p>
+      If a toot has been edited, the creation date wil be struck out
+      and the date of the last edit will also be displayed.
+    </p>
+    <p>
+      Finally:  This is (for now) a read-only application.
+      You cannot manipulate any data on mastodon instances.
+      That is, you cannot reply, quote, favor, bnookmark, boost or edit a toot.
+      Similarly, you cannot follow, mute, ... an account.
+      Use the links to other mastodon clients and manipulate toots from there.
+      On the longer run, I would like to have the functionality of this
+      application integrated in a full-fledged mastodon app.
+    </p>
   </dialog>
 
 </body>
