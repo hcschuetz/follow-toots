@@ -23,6 +23,9 @@ tootContentStyle.replace(tootContentCSS);
 export default
 class RenderedToot extends HTMLElement {
 
+  #head: HTMLElement;
+  get head() { return this.#head; }
+
   // parts modified by property setters:
   #prefixWrapper = H("span.contents.prefix");
   #seenInput = H("input.seen", {
@@ -49,15 +52,15 @@ class RenderedToot extends HTMLElement {
 
   // TODO Unify the two menu-item lists?  Or do we expect them to diverge?
 
-  set dropDownMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
+  set dropDownMenuItemProvider(value: (toot: Status) => HParam) {
     this.#dropDownMenu.itemProvider = () => [
-      value(this.#toot, this),
+      value(this.#toot),
     ];
   }
 
-  set contextMenuItemProvider(value: (toot: Status, el: RenderedToot) => HParam) {
+  set contextMenuItemProvider(value: (toot: Status) => HParam) {
     this.#contextMenu.itemProvider = () => [
-      value(this.#toot, this),
+      value(this.#toot),
     ];
   }
 
@@ -80,7 +83,11 @@ class RenderedToot extends HTMLElement {
         .flatMap(({prop, abbr, method}, i) => [
           ...i === 0 ? [] : ["/"],
           H("span",
-            {onclick: () => method && this[method]?.(toot)},
+            method && {onclick: ev => {
+              ev.stopImmediatePropagation();
+              ev.preventDefault();
+              this[method]?.(toot);
+            }},
             `${toot[prop]}${abbr}`,
           ),
         ]),
@@ -91,6 +98,7 @@ class RenderedToot extends HTMLElement {
         tabIndex: 0,
       },
       this.#contextMenu,
+      this.#head =
       H("div.toot-head",
         this.#prefixWrapper,
         this.#seenInput,

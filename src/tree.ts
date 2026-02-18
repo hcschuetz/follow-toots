@@ -15,6 +15,7 @@ import { findCircular, findLastCircular } from './findCircular';
 import { linkableFeatureKeys, linkableFeatures, linkConfigConfig, type LinkableFeature } from './linkConfigConfig';
 import Registry from './Registry';
 import { menuButtonWithKey } from './menuButton';
+import A_blank from './A_blank';
 
 const registry = new Registry();
 
@@ -30,7 +31,7 @@ const db = await database;
 // unnecessary page fetches for varying parameters and also
 // leak somewhat private data to the site hoster.)
 // In standard form there are parameters "instance" and "id".
-const params = new URLSearchParams(location.hash.substring(1));
+let params = new URLSearchParams(location.hash.substring(1));
 
 // Accept an URL from one of various mastodon frontends as
 // parameter "url" and convert to standard form.
@@ -61,6 +62,12 @@ function closeWindow(): never {
 const instance = params.get("instance")!;
 const id = params.get("id")!;
 const key = `${instance}/${id}`;
+let focus = params.get("focus");
+if (!focus) {
+  focus = id;
+  params.set("focus", focus);
+  window.history.replaceState({}, "", "#" + params);
+}
 
 setupNotifications<Notifications>("followToots", {
   async updatedTreeOverview(updKey) {
@@ -118,39 +125,56 @@ new BroadcastChannel("linkConfig").addEventListener("message", readLinkConfig);
 readLinkConfig();
 
 
-const tootMap = new Map<Status, RenderedToot>();
+const tootMap = new Map<string, RenderedToot>();
 /** ordered according to the current display mode */
 const toots = new Array<Status>();
 
 function handleToot(toot: Status, prefix?: HTMLElement) {
   toots.push(toot);
-  const rendered = tootMap.get(toot)!;
+  const rendered = tootMap.get(toot.id)!;
   rendered.headerPrefix = prefix;
   return rendered;
 }
 
-function goToToot(toot?: Status) {
-  if (!toot) return;
-  const to = tootMap.get(toot);
+function goToToot(focus?: string) {
+  if (!focus) return;
+  const newHash = "#" + new URLSearchParams({instance, id, focus});
+  if (newHash === document.location.hash) {
+    // Assigning to document.location.hash would not trigger a "hashchange"
+    // event in this case.
+    goToFocus();
+  } else {
+    document.location.hash = newHash;
+  }
+}
+
+window.addEventListener("hashchange", goToFocus);
+
+function goToFocus() {
+  params = new URLSearchParams(location.hash.substring(1));
+  focus = params.get("focus");
+  if (!focus) return;
+  const to = tootMap.get(focus);
   if (!to) return;
   to.focus({preventScroll: true});
-  to.scrollIntoView({
-    block: "center",
-    behavior: "smooth",
-  });
+  // The first click of a double-click may already focus a toot, which triggers
+  // a call to this function.  (Could we avoid that?)  We delay the centering
+  // a bit so that the second click (and thus the double-click event) will not
+  // be applied to an unexpected toot that has been scrolled under the pointer.
+  setTimeout(() => center(to), 300);
 }
 
 function nextToot(toot: Status) {
   const i = toots.findIndex(t => t === toot);
   if (i < 0) return;
-  goToToot(toots[(i+1) % toots.length]);
+  goToToot(toots[(i+1) % toots.length]?.id);
 }
 
 function previousToot(toot: Status) {
   const n = toots.length;
   const i = toots.findIndex(t => t === toot);
   if (i < 0) return;
-  goToToot(toots[(i-1 + n) % n]);
+  goToToot(toots[(i-1 + n) % n]?.id);
 }
 
 function nextUnseen(toot: Status) {
@@ -158,7 +182,7 @@ function nextUnseen(toot: Status) {
     toots,
     toot,
     t => !seenSignals.get(versionId(t))?.value,
-  ));
+  )?.id);
 }
 
 function previousUnseen(toot: Status) {
@@ -166,10 +190,10 @@ function previousUnseen(toot: Status) {
     toots,
     toot,
     t => !seenSignals.get(versionId(t))?.value,
-  ));
+  )?.id);
 }
 
-const menuItems = (toot: Status, el: RenderedToot): HParam => {
+const menuItems = (toot: Status): HParam => {
   const seenSig = seenSignals.get(versionId(toot))!;
   // No need to observe signals in an effect. (The menu is short-lived.)
   const seen = seenSig.value;
@@ -178,17 +202,7 @@ const menuItems = (toot: Status, el: RenderedToot): HParam => {
     menuButtonWithKey(
       seen ? "☐ Mark toot as unseen" : "☑ Mark toot as seen",
       ["Space"],
-      () => {
-        seenSig.value = !seen;
-        setTimeout(() => {
-          el.scrollIntoView({
-            // "start" would move it behind the sticky header
-            block: "center",
-            behavior: "smooth",
-          });
-          el.focus();
-        }, 100);
-      },
+      () => seenSig.value = !seen,
     ),
     menuButtonWithKey("Previous unseen toot", ["Ctrl", "⬅"], () => previousUnseen(toot)),
     menuButtonWithKey("Previous toot",        [        "⬅"], () => previousToot(toot)  ),
@@ -233,9 +247,12 @@ const tootKeyHandler = (toot: Status, seenSig: Signal<boolean>) => (ev: Keyboard
       if (ev.ctrlKey) previousUnseen(toot);
       else previousToot(toot);
       break;
-    case " ":
+    case " ": {
       seenSig.value = !seenSig.value;
+      const tootEl = tootMap.get(toot.id);
+      if (tootEl) center(tootEl);
       break;
+    }
     default: return;
   }
   ev.preventDefault();
@@ -390,7 +407,7 @@ function renderTreeHead() {
   fill("#all-seen", {onclick: () => markAllAsSeen()});
   fill("#all-unseen", {onclick: () => markAllAsUnseen()});
   fill("#reload", {onclick: () => fetchTree(instance, id)});
-  fill("#remove", {onclick: () => deleteTree(overview!)});
+  fill("#unfollow", {onclick: () => deleteTree(overview!)});
   fill("#display-tree", {"onchange": ev =>
     displayTreeSig.value = (ev.currentTarget as HTMLInputElement).checked
   });
@@ -471,14 +488,14 @@ function renderAccountStats({n, account, relationship}: Stats) {
 const dialog = document.querySelector<HTMLDialogElement>("#account-list-dialog")!;
 const dialogH = document.querySelector<HTMLDialogElement>("#account-list-heading")!;
 const dialogG = document.querySelector<HTMLDialogElement>("#account-list-grid")!;
-const dialogClose = document.querySelector<HTMLButtonElement>("#account-list-close")!;
-
-dialogClose.onclick = () => dialog.close();
 
 async function getJSON(url: string) {
+  const headers: HeadersInit = {};
   const entry = await db.get("accessTokens", instance);
-  if (!entry) throw "no access token for " + instance;
-  const response = await fetch(url, {headers: {Authorization: `Bearer ${entry.token}`}});
+  if (entry) {
+    headers.Authorization = `Bearer ${entry.token}`;
+  };
+  const response = await fetch(url, {headers});
   if (!response.ok) throw `HTTPS status: ${response.status} ${response.statusText}`;
   return await response.json();
 }
@@ -555,18 +572,31 @@ async function renderDetails() {
   tootMap.clear();
   for (const toot of allToots) {
     const seenSig = seenSignals.get(versionId(toot))!;
-    const tootEl = renderInto(new RenderedToot(toot), {
-      contextMenuItemProvider: menuItems,
-      dropDownMenuItemProvider: menuItems,
-      onseenchange: ev => seenSig.value = ev.detail,
-      onkeydown: tootKeyHandler(toot, seenSig),
-      // Not sure if this is a good idea:
-      ondblclick: () => seenSig.value = !seenSig.value,
-      onshowboosts: showAccounts("Boosted By", "reblogged_by"),
-      onshowfavs: showAccounts("Favorited By", "favourited_by"),
-    });
+    const tootEl = renderInto(new RenderedToot(toot),
+      {
+        contextMenuItemProvider: menuItems,
+        dropDownMenuItemProvider: menuItems,
+        // Event hooks provided by RenderedToot itself:
+        onseenchange: ev => seenSig.value = ev.detail,
+        onshowboosts: showAccounts("Boosted By", "reblogged_by"),
+        onshowfavs: showAccounts("Favorited By", "favourited_by"),
+        // Event hooks inherited from HTMLElement:
+        onkeydown: tootKeyHandler(toot, seenSig),
+        onfocus: () => goToToot(toot.id),
+      },
+      el => el.addEventListener("dblclick", ev => {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        seenSig.value = !seenSig.value;
+        // This may collapse the toot body and the remaining toot head may now
+        // be outside the visible area.  To avoid confusion we scroll the toot
+        // into sight.  (This may be redundant to the scrolling in goToFocus(),
+        // but that does not matter.)
+        center(tootEl);
+      }, true),
+    );
     regEffect(() => { tootEl.seen = seenSig.value; });
-    tootMap.set(toot, tootEl);
+    tootMap.set(toot.id, tootEl);
   }
 
   toots.length = 0;
@@ -584,8 +614,10 @@ async function renderDetails() {
       renderTootList();
     }
   });
+}
 
-  goToToot(details?.root);
+function center(el: RenderedToot) {
+  el.head.scrollIntoView({block: "center", behavior: "smooth"});
 }
 
 async function show(withDetails: boolean) {
@@ -626,7 +658,14 @@ async function show(withDetails: boolean) {
     allToots = [...ancestors, root, ...descendants];
 
     await renderDetails();
+    goToFocus();
   }
 }
 
 show(true);
+
+for (const close of document.querySelectorAll(".close-dialog")) {
+  close.addEventListener("click", () => {
+    (close.closest("dialog") as HTMLDialogElement).close();
+  });
+}
