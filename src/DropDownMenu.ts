@@ -31,9 +31,9 @@ class DropDownMenu extends HTMLElement {
     this.close = ev => {
       if (!details.open) return;
       details.open = false;
-      // This avoids the immediate re-opening of the details element
-      // if ev should target the summary element:
-      ev.preventDefault();
+      if (ev.target === this) {
+        ev.preventDefault(); // avoid immediate re-opening
+      }
     };
   }
 
